@@ -1,0 +1,69 @@
+# ─── API & Internal Docs (do not expose) ───────────────────────
+API.md
+ATTRIBUTIONS.md
+guidelines/
+
+# ─── Dependencies ───────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ─── Build Output ───────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+out/
+
+# ─── Environment Variables (sensitive!) ─────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# ─── Vite Cache ─────────────────────────────────────────────────
+.vite/
+vite.config.ts.timestamp-*
+
+# ─── TypeScript Build Info ───────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Editor / IDE ────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── OS Files ────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── Logs ────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Testing / Coverage ──────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ─── Misc ────────────────────────────────────────────────────────
+*.local
+.cache/
+node_modules
