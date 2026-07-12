@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
-import { Users, Plus, Search, Filter } from 'lucide-react';
+import { Users, Plus, Search, Filter, Pencil, Trash2 } from 'lucide-react';
 import hrExtService, { type Recruitment } from '@/services/hrExtService';
 import { Modal, FormField, DetailRow, ModalBtn, inputCls, selectCls } from '@/app/components/ui/Modal';
 
@@ -217,10 +217,14 @@ export function Recruitment() {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm">
-                    <div className="flex gap-2">
-                      <button onClick={() => { setSelected(r); setModal('view'); }} className="text-blue-600 hover:text-blue-800">View</button>
-                      <button onClick={() => openEdit(r)} className="text-yellow-600 hover:text-yellow-800">Edit</button>
-                      <button onClick={() => { setSelected(r); setModal('delete'); }} className="text-red-600 hover:text-red-800">Delete</button>
+                    <div className="flex gap-3 items-center">
+                      <button onClick={() => { setSelected(r); setModal('view'); }} className="text-blue-600 hover:text-blue-800 font-medium">View</button>
+                      <button onClick={() => openEdit(r)} className="text-yellow-600 hover:text-yellow-700 flex items-center" aria-label="Edit">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => { setSelected(r); setModal('delete'); }} className="text-red-600 hover:text-red-700 flex items-center" aria-label="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
