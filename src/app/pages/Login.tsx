@@ -442,7 +442,7 @@ export function Login() {
           <span className="text-white font-bold text-xl tracking-wider">Nexa<span className="text-sky-400">ERP</span></span>
         </div>
         <div className="flex items-center gap-2 text-xs text-blue-200 bg-white/[0.02] border border-white/[0.05] px-4 py-2 rounded-xl font-mono">
-          <Lock className="w-3.5 h-3.5 text-sky-400 animate-pulse" /> Unified Architecture Gateway
+          <Lock className="w-3.5 h-3.5 text-sky-400 animate-pulse" /> END TO END ENCRYPTED LAYER
         </div>
       </div>
 
@@ -671,11 +671,11 @@ export function Login() {
       </div>
 
       <div className="relative z-20 w-full text-center py-3.5 border-t border-white/[0.03] bg-slate-950/60 text-[11px] text-blue-400/60 tracking-wider flex flex-col sm:flex-row items-center justify-between px-6 gap-2 font-mono">
-        <p>© 2026 NexaERP Infrastructure Operations. Auth Architecture Layer.</p>
+        <p>© 2026 NexaERP Infrastructure.</p>
         <div className="flex items-center gap-4 text-blue-500/60">
-          <a href="#" className="hover:text-blue-400 transition-colors">Anti-Grav Target Sync</a>
-          <span>•</span>
-          <a href="#" className="hover:text-blue-400 transition-colors">Core Layer: Active</a>
+         
+    
+          
         </div>
       </div>
 
