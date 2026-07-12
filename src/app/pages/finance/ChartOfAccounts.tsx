@@ -31,45 +31,45 @@ export function ChartOfAccounts() {
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
-        <div><h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3"><BookOpen className="w-8 h-8 text-blue-600" /> Bagan Akun</h1><p className="text-gray-500 mt-1">Kelola chart of accounts</p></div>
-        <button onClick={()=>setModal('new')} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><Plus className="w-5 h-5" /> Akun Baru</button>
+        <div><h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3"><BookOpen className="w-8 h-8 text-blue-600" /> Chart of Accounts</h1><p className="text-gray-500 mt-1">Manage your chart of accounts</p></div>
+        <button onClick={()=>setModal('new')} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"><Plus className="w-5 h-5" /> New Account</button>
       </div>
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="flex gap-4"><div className="flex-1 relative"><Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari kode atau nama akun..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div><button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"><Filter className="w-5 h-5" /> Filter</button></div>
+        <div className="flex gap-4"><div className="flex-1 relative"><Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search code or account name..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" /></div><button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"><Filter className="w-5 h-5" /> Filter</button></div>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? <div className="p-8 text-center text-gray-400">Memuat data...</div> : (
-        <table className="w-full"><thead className="bg-gray-50 border-b border-gray-200"><tr>{['Kode','Nama Akun','Tipe','Deskripsi','Status','Aksi'].map(h=><th key={h} className="text-left px-4 py-3 text-sm font-semibold text-gray-900">{h}</th>)}</tr></thead>
+        {loading ? <div className="p-8 text-center text-gray-400">Loading data...</div> : (
+        <table className="w-full"><thead className="bg-gray-50 border-b border-gray-200"><tr>{['Code','Account Name','Type','Description','Status','Action'].map(h=><th key={h} className="text-left px-4 py-3 text-sm font-semibold text-gray-900">{h}</th>)}</tr></thead>
           <tbody className="divide-y divide-gray-200">{filtered.map(a=>(
             <tr key={a.id} className="hover:bg-gray-50">
               <td className="px-4 py-4 text-sm font-medium text-gray-900">{a.accountCode}</td>
               <td className="px-4 py-4 text-sm text-gray-900">{a.accountName}</td>
               <td className="px-4 py-4 text-sm text-gray-600">{a.accountType}</td>
               <td className="px-4 py-4 text-sm text-gray-600">{a.description??'-'}</td>
-              <td className="px-4 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-medium">{a.isActive?'Aktif':'Nonaktif'}</span></td>
-              <td className="px-4 py-4 text-sm"><div className="flex gap-2"><button onClick={()=>{setSelected(a);setModal('view');}} className="text-blue-600 hover:text-blue-800">Lihat</button><button onClick={()=>openEdit(a)} className="text-yellow-600 hover:text-yellow-800">Edit</button><button onClick={()=>{setSelected(a);setModal('delete');}} className="text-red-600 hover:text-red-800">Hapus</button></div></td>
+              <td className="px-4 py-4"><span className="px-2.5 py-0.5 rounded-full text-xs font-medium">{a.isActive?'Active':'Inactive'}</span></td>
+              <td className="px-4 py-4 text-sm"><div className="flex gap-2"><button onClick={()=>{setSelected(a);setModal('view');}} className="text-blue-600 hover:text-blue-800">View</button><button onClick={()=>openEdit(a)} className="text-yellow-600 hover:text-yellow-800">Edit</button><button onClick={()=>{setSelected(a);setModal('delete');}} className="text-red-600 hover:text-red-800">Delete</button></div></td>
             </tr>
           ))}
           </tbody>
         </table>
         )}
       </div>
-      <Modal open={modal==='view'} onClose={close} title="Detail Akun" size="md" footer={<ModalBtn onClick={close}>Tutup</ModalBtn>}>
-        {selected&&<div><DetailRow label="Kode" value={selected.accountCode}/><DetailRow label="Nama" value={selected.accountName}/><DetailRow label="Tipe" value={selected.accountType}/><DetailRow label="Deskripsi" value={selected.description??'-'}/><DetailRow label="Status" value={selected.isActive?'Aktif':'Nonaktif'}/></div>}
+      <Modal open={modal==='view'} onClose={close} title="Account Details" size="md" footer={<ModalBtn onClick={close}>Close</ModalBtn>}>
+        {selected&&<div><DetailRow label="Code" value={selected.accountCode}/><DetailRow label="Name" value={selected.accountName}/><DetailRow label="Type" value={selected.accountType}/><DetailRow label="Description" value={selected.description??'-'}/><DetailRow label="Status" value={selected.isActive?'Active':'Inactive'}/></div>}
       </Modal>
-      {[{m:'new',title:'Akun Baru'},{m:'edit',title:'Edit Akun'}].map(({m,title})=>(
-        <Modal key={m} open={modal===m} onClose={close} title={title} size="md" footer={<><ModalBtn onClick={close}>Batal</ModalBtn><ModalBtn variant="primary" onClick={m==='new'?handleNew:handleEdit}>Simpan</ModalBtn></>}>
+      {[{m:'new',title:'New Account'},{m:'edit',title:'Edit Account'}].map(({m,title})=>(
+        <Modal key={m} open={modal===m} onClose={close} title={title} size="md" footer={<><ModalBtn onClick={close}>Cancel</ModalBtn><ModalBtn variant="primary" onClick={m==='new'?handleNew:handleEdit}>Save</ModalBtn></>}>
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Kode Akun" required><input value={form.accountCode} onChange={e=>setForm(f=>({...f,accountCode:e.target.value}))} className={inputCls} /></FormField>
-            <FormField label="Nama Akun" required><input value={form.accountName} onChange={e=>setForm(f=>({...f,accountName:e.target.value}))} className={inputCls} /></FormField>
-            <FormField label="Tipe Akun"><select value={form.accountType} onChange={e=>setForm(f=>({...f,accountType:e.target.value}))} className={selectCls}><option value="ASSET">Aset</option><option value="LIABILITY">Kewajiban</option><option value="EQUITY">Ekuitas</option><option value="REVENUE">Pendapatan</option><option value="EXPENSE">Beban</option></select></FormField>
-            <FormField label="Status"><select value={String(form.isActive)} onChange={e=>setForm(f=>({...f,isActive:e.target.value==='true'}))} className={selectCls}><option value="true">Aktif</option><option value="false">Nonaktif</option></select></FormField>
-            <FormField label="Deskripsi"><input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} className={inputCls} /></FormField>
+            <FormField label="Account Code" required><input value={form.accountCode} onChange={e=>setForm(f=>({...f,accountCode:e.target.value}))} className={inputCls} /></FormField>
+            <FormField label="Account Name" required><input value={form.accountName} onChange={e=>setForm(f=>({...f,accountName:e.target.value}))} className={inputCls} /></FormField>
+            <FormField label="Account Type"><select value={form.accountType} onChange={e=>setForm(f=>({...f,accountType:e.target.value}))} className={selectCls}><option value="ASSET">Asset</option><option value="LIABILITY">Liability</option><option value="EQUITY">Equity</option><option value="REVENUE">Revenue</option><option value="EXPENSE">Expense</option></select></FormField>
+            <FormField label="Status"><select value={String(form.isActive)} onChange={e=>setForm(f=>({...f,isActive:e.target.value==='true'}))} className={selectCls}><option value="true">Active</option><option value="false">Inactive</option></select></FormField>
+            <FormField label="Description"><input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} className={inputCls} /></FormField>
           </div>
         </Modal>
       ))}
-      <Modal open={modal==='delete'} onClose={close} title="Hapus Akun" size="sm" footer={<><ModalBtn onClick={close}>Batal</ModalBtn><ModalBtn variant="danger" onClick={handleDelete}>Hapus</ModalBtn></>}>
-        <p className="text-gray-600">Yakin ingin menghapus akun <strong>{selected?.accountName}</strong>?</p>
+      <Modal open={modal==='delete'} onClose={close} title="Delete Account" size="sm" footer={<><ModalBtn onClick={close}>Cancel</ModalBtn><ModalBtn variant="danger" onClick={handleDelete}>Delete</ModalBtn></>}>
+        <p className="text-gray-600">Are you sure you want to delete account <strong>{selected?.accountName}</strong>?</p>
       </Modal>
     </div>
   );
