@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
+import { ForgotPassword } from './pages/ForgotPassword';
 
 // Finance Module
 import { FinanceOverview } from './pages/finance/FinanceOverview';
@@ -83,6 +84,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     Component: Login,
+  },
+  {
+    path: '/forgot-password',
+    Component: ForgotPassword,
   },
   {
     path: '/',

@@ -11,6 +11,7 @@ export function FinanceOverview() {
       />
 
       <div className="grid gap-6">
+        {/* Chart of Accounts */}
         <DataStructure
           title="Chart of Accounts"
           description="Defines the structure of the general ledger with account codes and hierarchies"
@@ -22,10 +23,11 @@ export function FinanceOverview() {
             { name: 'accountSubType', type: 'string', description: 'Further categorization' },
             { name: 'parentAccountId', type: 'string?', description: 'For hierarchical structure' },
             { name: 'balance', type: 'number', description: 'Current balance' },
-            { name: 'currency', type: 'string', description: 'Currency code' },
+            { name: 'currency', type: 'string', description: 'Currency code (e.g., LKR)' },
           ]}
         />
 
+        {/* Journal Entry */}
         <DataStructure
           title="Journal Entry"
           description="Records all financial transactions with debit and credit entries"
@@ -41,6 +43,24 @@ export function FinanceOverview() {
           ]}
         />
 
+        {/* Accounts Receivable */}
+        <DataStructure
+          title="Accounts Receivable"
+          description="Tracks customer invoices and pending collections"
+          fields={[
+            { name: 'id', type: 'string', description: 'Unique identifier' },
+            { name: 'invoiceNumber', type: 'string', description: 'Customer invoice number' },
+            { name: 'customerId', type: 'string', description: 'Reference to customer' },
+            { name: 'invoiceDate', type: 'Date', description: 'Invoice date' },
+            { name: 'dueDate', type: 'Date', description: 'Due date for collection' },
+            { name: 'amount', type: 'number', description: 'Total invoice amount' },
+            { name: 'amountReceived', type: 'number', description: 'Amount received so far' },
+            { name: 'amountDue', type: 'number', description: 'Outstanding balance' },
+            { name: 'status', type: 'enum', description: 'Open | Partial | Paid | Overdue' },
+          ]}
+        />
+
+        {/* Accounts Payable */}
         <DataStructure
           title="Accounts Payable"
           description="Tracks vendor invoices and payment obligations"
@@ -57,6 +77,7 @@ export function FinanceOverview() {
           ]}
         />
 
+        {/* Budget */}
         <DataStructure
           title="Budget"
           description="Defines budget allocations and tracks spending against budgets"
