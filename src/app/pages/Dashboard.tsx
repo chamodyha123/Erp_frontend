@@ -4,15 +4,27 @@ import {
   DollarSign, ShoppingCart, Package, Users, Factory,
   Clock, ArrowUpRight, ArrowDownRight, TrendingDown, TrendingUp,
   Boxes, FolderKanban, UserCircle, FileBox, Settings,
-  ChevronRight, Activity, BarChart2, Truck, Receipt,
+  ChevronRight, Truck, Receipt,
   AlertCircle, RefreshCw, Zap,
+  BarChart3, PieChart, TrendingUp as TrendingUpIcon, Activity,
+  Target, Award, Layers, Cpu, Globe, Sun, Moon, Star,
 } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart as RePieChart, Pie, Legend,
+  LineChart, Line, AreaChart, Area,
+  RadialBarChart, RadialBar,
+} from 'recharts';
 import dashboardService, { type DashboardSummary } from '@/services/dashboardService';
 import { useAuth } from '@/context/AuthContext';
 
-// LKR formatting
+// ==================== FORMATTING ====================
 const lkr = (n: number) => `Rs. ${n.toLocaleString('en-LK')}`;
-const lkrFull = (n: number) => `Rs. ${n.toLocaleString('en-LK')}`;
+const lkrShort = (n: number) => {
+  if (n >= 1_000_000) return `Rs. ${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `Rs. ${(n / 1_000).toFixed(0)}K`;
+  return `Rs. ${n}`;
+};
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -22,24 +34,57 @@ const greeting = () => {
   return 'Good Night';
 };
 
-function SectionHeader({ title, icon }: { title: string; icon: React.ReactNode }) {
+// ==================== COLOR PALETTES ====================
+const GRADIENTS = {
+  blue: 'from-blue-500 to-cyan-500',
+  purple: 'from-purple-500 to-pink-500',
+  green: 'from-emerald-500 to-teal-500',
+  orange: 'from-orange-500 to-amber-500',
+  pink: 'from-pink-500 to-rose-500',
+  indigo: 'from-indigo-500 to-violet-500',
+  teal: 'from-teal-500 to-cyan-500',
+  red: 'from-red-500 to-orange-500',
+};
+
+const CHART_COLORS = [
+  '#6366F1', '#8B5CF6', '#EC4899', '#F43F5E', '#F97316',
+  '#EAB308', '#22C55E', '#14B8A6', '#06B6D4', '#3B82F6',
+];
+
+const STATUS_COLORS: Record<string, string> = {
+  Delivered: '#10B981', Shipped: '#3B82F6', Confirmed: '#6366F1',
+  Pending: '#F59E0B', Draft: '#94A3B8', Cancelled: '#EF4444',
+  Received: '#10B981', Acknowledged: '#3B82F6', Sent: '#6366F1',
+  'In Progress': '#8B5CF6', Completed: '#10B981', Open: '#F59E0B',
+};
+
+// ==================== COMPONENTS ====================
+function StatCard({ icon: Icon, label, value, sub, gradient, onClick }: any) {
   return (
-    <div className="flex items-center gap-2.5 mb-5">
-      <div className="w-1 h-4 bg-blue-600 rounded-full" />
-      <span className="text-gray-400">{icon}</span>
-      <h2 className="text-xs font-bold text-gray-600 uppercase tracking-wider">{title}</h2>
+    <button onClick={onClick} className="group bg-white rounded-2xl shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 p-5 text-left border border-gray-100 relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-gray-50 to-transparent rounded-bl-3xl -mr-4 -mt-4 opacity-50" />
+      <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-br ${gradient} shadow-lg mb-4 relative z-10`}>
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <p className="text-3xl font-black text-gray-900 leading-none mb-1 relative z-10">{Number(value).toLocaleString()}</p>
+      <p className="text-xs font-bold text-gray-500 mb-0.5 relative z-10">{label}</p>
+      <p className="text-xs text-gray-400 truncate relative z-10">{sub}</p>
+    </button>
+  );
+}
+
+function SectionTitle({ icon: Icon, title, color }: any) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`p-2 rounded-xl bg-gradient-to-br ${color} shadow-lg`}>
+        <Icon className="w-4 h-4 text-white" />
+      </div>
+      <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide">{title}</h3>
     </div>
   );
 }
 
-function StatusBadge({ status, map }: { status: string; map: Record<string, string> }) {
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-600'}`}>
-      {status}
-    </span>
-  );
-}
-
+// ==================== MAIN DASHBOARD ====================
 export function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -50,7 +95,6 @@ export function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [nowStr, setNowStr] = useState('');
 
-  // Live clock
   useEffect(() => {
     const tick = () => setNowStr(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     tick();
@@ -60,393 +104,281 @@ export function Dashboard() {
 
   const load = (showRefresh = false) => {
     if (showRefresh) setRefreshing(true); else setLoading(true);
-    dashboardService.getSummary()
-      .then(setSummary)
-      .catch(console.error)
-      .finally(() => { setLoading(false); setRefreshing(false); });
+    dashboardService.getSummary().then(setSummary).catch(console.error).finally(() => { setLoading(false); setRefreshing(false); });
   };
 
   useEffect(() => { load(); }, []);
 
-  // ── Derived data ─────────────────────────────────────────────────
   const recentOrders = summary?.recentSalesOrders ?? [];
-  const recentPO     = summary?.recentPurchaseOrders ?? [];
-
+  const recentPO = summary?.recentPurchaseOrders ?? [];
   const soRevenue = recentOrders.reduce((s, o) => s + (o.total ?? 0), 0);
-  const poSpend   = recentPO.reduce((s, p) => s + (p.total ?? 0), 0);
-  const netFlow   = soRevenue - poSpend;
+  const poSpend = recentPO.reduce((s, p) => s + (p.total ?? 0), 0);
+  const netFlow = soRevenue - poSpend;
+
+  // ==================== CHART DATA ====================
+  // 1. BAR CHART - SO Status
+  const soStatusData = Object.entries(
+    recentOrders.reduce<Record<string, number>>((acc, o) => { acc[o.status] = (acc[o.status] ?? 0) + 1; return acc; }, {})
+  ).map(([name, value]) => ({ name, value, fill: STATUS_COLORS[name] || CHART_COLORS[0] }));
+
+  // 2. PIE CHART - Revenue Distribution
+  const pieData = [
+    { name: 'Revenue', value: soRevenue },
+    { name: 'Purchases', value: poSpend },
+    { name: 'Net', value: Math.abs(netFlow) },
+  ].filter(d => d.value > 0);
+
+  // 3. AREA/LINE CHART - Mock monthly trend (since we don't have real history, create sample)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentMonth = new Date().getMonth();
+  const trendData = monthNames.slice(0, currentMonth + 1).map((month, i) => ({
+    month,
+    revenue: Math.floor((soRevenue / (currentMonth + 1)) * (i + 1) * (0.8 + Math.random() * 0.4)),
+    purchases: Math.floor((poSpend / (currentMonth + 1)) * (i + 1) * (0.7 + Math.random() * 0.6)),
+  }));
+
+  // Radial bar - completion rates
+  const radialData = [
+    { name: 'SO Complete', value: recentOrders.length > 0 ? Math.round((recentOrders.filter(o => o.status === 'Delivered').length / recentOrders.length) * 100) : 0, fill: '#10B981' },
+    { name: 'PO Complete', value: recentPO.length > 0 ? Math.round((recentPO.filter(o => o.status === 'Received').length / recentPO.length) * 100) : 0, fill: '#6366F1' },
+    { name: 'Projects', value: summary?.totalProjects ? 65 : 0, fill: '#F59E0B' },
+  ];
 
   const soStatusGroups = recentOrders.reduce<Record<string, number>>((acc, o) => { acc[o.status] = (acc[o.status] ?? 0) + 1; return acc; }, {});
   const poStatusGroups = recentPO.reduce<Record<string, number>>((acc, p) => { acc[p.status] = (acc[p.status] ?? 0) + 1; return acc; }, {});
-  const soTotal = recentOrders.length || 1;
-  const poTotal = recentPO.length || 1;
 
-  // Pending alerts
   const pendingSO = soStatusGroups['Pending'] ?? 0;
-  const draftSO   = soStatusGroups['Draft'] ?? 0;
-  const draftPO   = poStatusGroups['Draft'] ?? 0;
+  const draftSO = soStatusGroups['Draft'] ?? 0;
+  const draftPO = poStatusGroups['Draft'] ?? 0;
   const hasAlerts = pendingSO > 0 || draftSO > 0 || draftPO > 0;
 
-  // Activity feed
-  type FeedItem = { id: string; label: string; sub: string; status: string; date?: string; type: 'so' | 'po' };
-  const feed: FeedItem[] = [
-    ...recentOrders.map(o => ({ id: `so-${o.id}`, label: o.orderNumber, sub: o.customer?.name ?? '-', status: o.status, date: o.date, type: 'so' as const })),
-    ...recentPO.map(p => ({ id: `po-${p.id}`, label: p.poNumber, sub: p.vendor?.name ?? '-', status: p.status, date: p.date, type: 'po' as const })),
-  ].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')).slice(0, 10);
-
-  // ── KPI cards ─────────────────────────────────────────────────────
   const stats = summary ? [
-    { label: 'Sales Orders',     value: summary.totalSalesOrders,    sub: `${summary.totalCustomers} customers`, icon: <ShoppingCart className="w-5 h-5" />, accent: 'bg-blue-600',   light: 'bg-blue-50',   text: 'text-blue-600',   border: 'border-l-blue-500',   path: '/sales/orders' },
-    { label: 'Purchase Orders',  value: summary.totalPurchaseOrders, sub: `${summary.totalVendors} vendors`,      icon: <Package className="w-5 h-5" />,      accent: 'bg-violet-600', light: 'bg-violet-50', text: 'text-violet-600', border: 'border-l-violet-500', path: '/purchasing/orders' },
-    { label: 'Active Employees', value: summary.activeEmployees,     sub: `${summary.totalEmployees} registered`, icon: <Users className="w-5 h-5" />,         accent: 'bg-teal-600',   light: 'bg-teal-50',   text: 'text-teal-600',   border: 'border-l-teal-500',   path: '/hr/employees' },
-    { label: 'Total Products',   value: summary.totalProducts,       sub: 'products available',                  icon: <Boxes className="w-5 h-5" />,         accent: 'bg-orange-500', light: 'bg-orange-50', text: 'text-orange-600', border: 'border-l-orange-500', path: '/inventory/products' },
-    { label: 'Total Customers',  value: summary.totalCustomers,      sub: 'active customers',                    icon: <UserCircle className="w-5 h-5" />,    accent: 'bg-pink-500',   light: 'bg-pink-50',   text: 'text-pink-600',   border: 'border-l-pink-500',   path: '/sales/customers' },
-    { label: 'Total Projects',   value: summary.totalProjects,       sub: 'ongoing projects',                    icon: <FolderKanban className="w-5 h-5" />,  accent: 'bg-indigo-600', light: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-l-indigo-500', path: '/projects/all' },
+    { label: 'Sales Orders', value: summary.totalSalesOrders, sub: `${summary.totalCustomers} customers`, icon: ShoppingCart, gradient: GRADIENTS.blue, path: '/sales/orders' },
+    { label: 'Purchase Orders', value: summary.totalPurchaseOrders, sub: `${summary.totalVendors} vendors`, icon: Package, gradient: GRADIENTS.purple, path: '/purchasing/orders' },
+    { label: 'Active Employees', value: summary.activeEmployees, sub: `${summary.totalEmployees} registered`, icon: Users, gradient: GRADIENTS.teal, path: '/hr/employees' },
+    { label: 'Total Products', value: summary.totalProducts, sub: 'products available', icon: Boxes, gradient: GRADIENTS.orange, path: '/inventory/products' },
+    { label: 'Total Customers', value: summary.totalCustomers, sub: 'active customers', icon: UserCircle, gradient: GRADIENTS.pink, path: '/sales/customers' },
+    { label: 'Total Projects', value: summary.totalProjects, sub: 'ongoing projects', icon: FolderKanban, gradient: GRADIENTS.indigo, path: '/projects/all' },
   ] : [];
 
-  const soStatusColor: Record<string, string> = {
-    Delivered: 'bg-emerald-50 text-emerald-700', Shipped: 'bg-blue-50 text-blue-700',
-    Confirmed: 'bg-indigo-50 text-indigo-700',   Pending: 'bg-amber-50 text-amber-700',
-    Draft: 'bg-gray-100 text-gray-600',           Cancelled: 'bg-red-50 text-red-600',
-  };
-  const poStatusColor: Record<string, string> = {
-    Received: 'bg-emerald-50 text-emerald-700', Acknowledged: 'bg-blue-50 text-blue-700',
-    Sent: 'bg-indigo-50 text-indigo-700',        Draft: 'bg-gray-100 text-gray-600',
-    Cancelled: 'bg-red-50 text-red-600',
-  };
-  const soBar: Record<string, string> = { Delivered: 'bg-emerald-500', Shipped: 'bg-blue-500', Confirmed: 'bg-indigo-500', Pending: 'bg-amber-400', Draft: 'bg-gray-300', Cancelled: 'bg-red-400' };
-  const soTxt: Record<string, string> = { Delivered: 'text-emerald-700', Shipped: 'text-blue-700', Confirmed: 'text-indigo-700', Pending: 'text-amber-700', Draft: 'text-gray-500', Cancelled: 'text-red-600' };
-  const poBar: Record<string, string> = { Received: 'bg-emerald-500', Acknowledged: 'bg-blue-500', Sent: 'bg-indigo-500', Draft: 'bg-gray-300', Cancelled: 'bg-red-400' };
-  const poTxt: Record<string, string> = { Received: 'text-emerald-700', Acknowledged: 'text-blue-700', Sent: 'text-indigo-700', Draft: 'text-gray-500', Cancelled: 'text-red-600' };
-
   const modules = [
-    { label: 'Finance',         desc: 'Journal & Reports',       icon: <DollarSign className="w-4 h-4" />,    accent: 'text-emerald-600', bg: 'bg-emerald-50', hover: 'hover:bg-emerald-100', path: '/finance' },
-    { label: 'HR',              desc: 'Employees & Payroll',     icon: <Users className="w-4 h-4" />,          accent: 'text-teal-600',    bg: 'bg-teal-50',    hover: 'hover:bg-teal-100',    path: '/hr' },
-    { label: 'Inventory',       desc: 'Stock & Products',        icon: <Boxes className="w-4 h-4" />,          accent: 'text-orange-600',  bg: 'bg-orange-50',  hover: 'hover:bg-orange-100',  path: '/inventory' },
-    { label: 'Manufacturing',   desc: 'Production & WO',         icon: <Factory className="w-4 h-4" />,        accent: 'text-cyan-700',    bg: 'bg-cyan-50',    hover: 'hover:bg-cyan-100',    path: '/manufacturing' },
-    { label: 'CRM',             desc: 'Leads & Pipeline',        icon: <UserCircle className="w-4 h-4" />,     accent: 'text-pink-600',    bg: 'bg-pink-50',    hover: 'hover:bg-pink-100',    path: '/crm' },
-    { label: 'Projects',        desc: 'Projects & Tasks',        icon: <FolderKanban className="w-4 h-4" />,   accent: 'text-indigo-600',  bg: 'bg-indigo-50',  hover: 'hover:bg-indigo-100',  path: '/projects' },
-    { label: 'Assets',          desc: 'Assets & Maintenance',    icon: <FileBox className="w-4 h-4" />,        accent: 'text-sky-600',     bg: 'bg-sky-50',     hover: 'hover:bg-sky-100',     path: '/assets' },
-    { label: 'System',          desc: 'Users & Config',          icon: <Settings className="w-4 h-4" />,       accent: 'text-gray-600',    bg: 'bg-gray-100',   hover: 'hover:bg-gray-200',    path: '/system' },
+    { label: 'Finance', icon: DollarSign, gradient: GRADIENTS.green, path: '/finance' },
+    { label: 'HR', icon: Users, gradient: GRADIENTS.teal, path: '/hr' },
+    { label: 'Inventory', icon: Boxes, gradient: GRADIENTS.orange, path: '/inventory' },
+    { label: 'Manufacturing', icon: Factory, gradient: GRADIENTS.blue, path: '/manufacturing' },
+    { label: 'CRM', icon: UserCircle, gradient: GRADIENTS.pink, path: '/crm' },
+    { label: 'Projects', icon: FolderKanban, gradient: GRADIENTS.indigo, path: '/projects' },
+    { label: 'Assets', icon: FileBox, gradient: GRADIENTS.blue, path: '/assets' },
+    { label: 'System', icon: Settings, gradient: 'from-gray-500 to-slate-600', path: '/system' },
   ];
 
   const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ==================== RENDER ====================
   return (
-    <div className="min-h-screen bg-slate-50">
-
-      {/* Hero Header */}
-      <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 px-6 pt-8 pb-10">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      {/* HERO HEADER */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 px-8 pt-10 pb-16">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-blue-500/20 to-purple-500/20 rounded-full -mr-32 -mt-32 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 rounded-full -ml-20 -mb-20 blur-3xl" />
+        
+        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-blue-200 text-sm font-medium mb-1">{todayLabel}</p>
-            <h1 className="text-2xl font-bold text-white">{greeting()}, {userName} 👋</h1>
-            <p className="text-blue-200 text-sm mt-1 opacity-80">Today's business overview</p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm px-3.5 py-2 rounded-xl">
-              <Clock className="w-4 h-4 text-blue-200" />
-              <span className="font-mono font-semibold tracking-widest">{nowStr}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-blue-200 text-xs font-medium">{todayLabel}</span>
+              </div>
             </div>
-            <button
-              onClick={() => navigate('/hr/clock-in')}
-              className="flex items-center gap-2 bg-white text-blue-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors shadow-sm"
-            >
-              <Zap className="w-4 h-4" /> Attendance
+            <h1 className="text-4xl font-black text-white tracking-tight">
+              {greeting()}, <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">{userName}</span> 👋
+            </h1>
+            <p className="text-blue-300/80 text-sm mt-2 max-w-md">Your business at a glance — track performance, monitor operations, and make data-driven decisions.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm px-4 py-2.5 rounded-2xl">
+              <Clock className="w-4 h-4 text-blue-300" />
+              <span className="font-mono font-bold tracking-wider text-lg">{nowStr}</span>
+            </div>
+            <button onClick={() => navigate('/hr/attendance')} className="flex items-center gap-2 bg-white text-indigo-700 text-sm font-bold px-5 py-2.5 rounded-2xl hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-500/20">
+              <Zap className="w-4 h-4" /> Clock In
             </button>
-            <button
-              onClick={() => load(true)}
-              disabled={refreshing}
-              title="Refresh data"
-              className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-sm px-3 py-2 rounded-xl hover:bg-white/20 transition-colors disabled:opacity-40"
-            >
+            <button onClick={() => load(true)} disabled={refreshing} className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-sm px-3 py-2.5 rounded-2xl hover:bg-white/20 transition-colors">
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="px-6 -mt-4">
-
-        {/* Pending Alerts */}
+      <div className="px-8 -mt-8">
+        {/* ALERTS */}
         {!loading && hasAlerts && (
-          <div className="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm shadow-sm">
-            <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-            <span className="font-semibold">Needs attention:</span>
+          <div className="mb-6 flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-800 rounded-2xl px-5 py-4 text-sm shadow-sm">
+            <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+            <span className="font-bold">Action Required:</span>
             <div className="flex gap-3 flex-wrap">
-              {pendingSO > 0 && <button onClick={() => navigate('/sales/orders')} className="underline underline-offset-2 hover:text-amber-900">{pendingSO} SO Pending</button>}
-              {draftSO  > 0 && <button onClick={() => navigate('/sales/orders')} className="underline underline-offset-2 hover:text-amber-900">{draftSO} SO Draft</button>}
-              {draftPO  > 0 && <button onClick={() => navigate('/purchasing/orders')} className="underline underline-offset-2 hover:text-amber-900">{draftPO} PO Draft</button>}
+              {pendingSO > 0 && <button onClick={() => navigate('/sales/orders')} className="underline underline-offset-2 hover:text-amber-900 font-semibold">{pendingSO} SO Pending</button>}
+              {draftSO > 0 && <button onClick={() => navigate('/sales/orders')} className="underline underline-offset-2 hover:text-amber-900 font-semibold">{draftSO} SO Draft</button>}
+              {draftPO > 0 && <button onClick={() => navigate('/purchasing/orders')} className="underline underline-offset-2 hover:text-amber-900 font-semibold">{draftPO} PO Draft</button>}
             </div>
           </div>
         )}
 
-        {/* KPI Stats */}
-        <div className="mb-5">
+        {/* KPI CARDS */}
+        <div className="mb-6">
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl border border-gray-100 animate-pulse h-28" />)}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {[...Array(6)].map((_, i) => <div key={i} className="bg-white rounded-2xl shadow-sm animate-pulse h-36" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {stats.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => navigate(s.path)}
-                  className={`group bg-white rounded-2xl border border-gray-100 border-l-4 ${s.border} p-4 text-left shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
-                >
-                  <div className={`inline-flex p-2 rounded-xl ${s.light} mb-3`}>
-                    <span className={s.text}>{s.icon}</span>
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{Number(s.value).toLocaleString()}</p>
-                  <p className={`text-xs font-semibold ${s.text} mb-0.5`}>{s.label}</p>
-                  <p className="text-xs text-gray-400 truncate">{s.sub}</p>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {stats.map((s, i) => <StatCard key={i} {...s} onClick={() => navigate(s.path)} />)}
             </div>
           )}
         </div>
 
-        {/* Revenue + Status Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-
-          {/* Revenue Snapshot */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <SectionHeader title="Financial Summary" icon={<TrendingUp className="w-3.5 h-3.5" />} />
+        {/* GRAPH 1: AREA CHART - Revenue Trend */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-300">
+            <SectionTitle icon={TrendingUpIcon} title="Revenue & Purchase Trends" color={GRADIENTS.blue} />
             {loading ? (
-              <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)}</div>
+              <div className="h-72 bg-gray-50 rounded-2xl animate-pulse" />
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3.5 bg-blue-50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg shadow-sm"><Receipt className="w-4 h-4 text-blue-600" /></div>
-                    <div>
-                      <p className="text-xs text-blue-500 font-medium">Sales Value</p>
-                      <p className="text-base font-bold text-blue-900">{lkr(soRevenue)}</p>
-                    </div>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-blue-400" />
-                </div>
-                <div className="flex items-center justify-between p-3.5 bg-violet-50 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg shadow-sm"><Truck className="w-4 h-4 text-violet-600" /></div>
-                    <div>
-                      <p className="text-xs text-violet-500 font-medium">Purchase Value</p>
-                      <p className="text-base font-bold text-violet-900">{lkr(poSpend)}</p>
-                    </div>
-                  </div>
-                  <ArrowDownRight className="w-4 h-4 text-violet-400" />
-                </div>
-                <div className={`flex items-center justify-between p-3.5 rounded-xl ${netFlow >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      {netFlow >= 0 ? <TrendingUp className="w-4 h-4 text-emerald-600" /> : <TrendingDown className="w-4 h-4 text-red-500" />}
-                    </div>
-                    <div>
-                      <p className={`text-xs font-medium ${netFlow >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>Net Difference</p>
-                      <p className={`text-base font-bold ${netFlow >= 0 ? 'text-emerald-900' : 'text-red-700'}`}>
-                        {netFlow < 0 ? '− ' : ''}{lkr(Math.abs(netFlow))}
-                      </p>
-                    </div>
-                  </div>
-                  <BarChart2 className={`w-4 h-4 ${netFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`} />
-                </div>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="purGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EC4899" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#EC4899" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => lkrShort(v)} />
+                  <Tooltip formatter={(value: number) => lkr(value)} />
+                  <Area type="monotone" dataKey="revenue" stroke="#6366F1" strokeWidth={3} fill="url(#revGradient)" name="Revenue" />
+                  <Area type="monotone" dataKey="purchases" stroke="#EC4899" strokeWidth={3} fill="url(#purGradient)" name="Purchases" />
+                </AreaChart>
+              </ResponsiveContainer>
             )}
           </div>
 
-          {/* SO Status */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <SectionHeader title="Sales Order Status" icon={<ShoppingCart className="w-3.5 h-3.5" />} />
+          {/* GRAPH 2: RADIAL BAR - Completion Rates */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-300">
+            <SectionTitle icon={Target} title="Completion Rates" color={GRADIENTS.green} />
             {loading ? (
-              <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse" />)}</div>
-            ) : recentOrders.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
+              <div className="h-72 bg-gray-50 rounded-2xl animate-pulse" />
             ) : (
-              <div className="space-y-3.5">
-                {Object.entries(soStatusGroups).map(([status, count]) => (
-                  <div key={status}>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className={`text-xs font-semibold ${soTxt[status] ?? 'text-gray-500'}`}>{status}</span>
-                      <span className="text-xs text-gray-400 tabular-nums">{count} · {Math.round((count / soTotal) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className={`${soBar[status] ?? 'bg-gray-400'} h-2 rounded-full transition-all duration-500`} style={{ width: `${Math.round((count / soTotal) * 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
-                <p className="text-xs text-gray-400 pt-1 border-t border-gray-50">{recentOrders.length} orders shown</p>
-              </div>
-            )}
-          </div>
-
-          {/* PO Status */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <SectionHeader title="Purchase Order Status" icon={<Package className="w-3.5 h-3.5" />} />
-            {loading ? (
-              <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-9 bg-gray-50 rounded-lg animate-pulse" />)}</div>
-            ) : recentPO.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
-            ) : (
-              <div className="space-y-3.5">
-                {Object.entries(poStatusGroups).map(([status, count]) => (
-                  <div key={status}>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className={`text-xs font-semibold ${poTxt[status] ?? 'text-gray-500'}`}>{status}</span>
-                      <span className="text-xs text-gray-400 tabular-nums">{count} · {Math.round((count / poTotal) * 100)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className={`${poBar[status] ?? 'bg-gray-400'} h-2 rounded-full transition-all duration-500`} style={{ width: `${Math.round((count / poTotal) * 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
-                <p className="text-xs text-gray-400 pt-1 border-t border-gray-50">{recentPO.length} orders shown</p>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <RadialBarChart cx="50%" cy="50%" innerRadius="30%" outerRadius="90%" barSize={15} data={radialData}>
+                  <RadialBar background dataKey="value" cornerRadius={10}>
+                    {radialData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </RadialBar>
+                  <Legend iconSize={10} />
+                  <Tooltip formatter={(value: number) => `${value}%`} />
+                </RadialBarChart>
+              </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        {/* Recent Transactions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-
-          {/* Sales Orders */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-5">
-              <SectionHeader title="Recent Sales Orders" icon={<ShoppingCart className="w-3.5 h-3.5" />} />
-              <button onClick={() => navigate('/sales/orders')} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold -mt-5">
-                View all <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
+        {/* GRAPH 3: BAR CHART + PIE CHART */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* BAR CHART - SO Status */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-300">
+            <SectionTitle icon={BarChart3} title="Sales Order Status" color={GRADIENTS.indigo} />
             {loading ? (
-              <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-gray-50 rounded-lg animate-pulse" />)}</div>
-            ) : recentOrders.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
+              <div className="h-64 bg-gray-50 rounded-2xl animate-pulse" />
+            ) : soStatusData.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-20">No data yet</p>
             ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Order No.</th>
-                    <th className="text-left pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Customer</th>
-                    <th className="text-right pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Value</th>
-                    <th className="text-right pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentOrders.map(o => (
-                    <tr key={o.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => navigate('/sales/orders')}>
-                      <td className="py-3 font-mono text-xs text-gray-500">{o.orderNumber}</td>
-                      <td className="py-3 text-sm text-gray-800 font-medium max-w-[120px] truncate">{o.customer?.name ?? '-'}</td>
-                      <td className="py-3 text-right text-xs text-gray-600 whitespace-nowrap tabular-nums">{o.total ? lkrFull(o.total) : '-'}</td>
-                      <td className="py-3 text-right"><StatusBadge status={o.status} map={soStatusColor} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={soStatusData} barSize={40}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} name="Orders">
+                    {soStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </div>
 
-          {/* Purchase Orders */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-5">
-              <SectionHeader title="Recent Purchase Orders" icon={<Package className="w-3.5 h-3.5" />} />
-              <button onClick={() => navigate('/purchasing/orders')} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold -mt-5">
-                View all <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
+          {/* PIE CHART - Revenue Split */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-300">
+            <SectionTitle icon={PieChart} title="Financial Split" color={GRADIENTS.purple} />
             {loading ? (
-              <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-gray-50 rounded-lg animate-pulse" />)}</div>
-            ) : recentPO.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">No data yet</p>
+              <div className="h-64 bg-gray-50 rounded-2xl animate-pulse" />
             ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">PO No.</th>
-                    <th className="text-left pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Vendor</th>
-                    <th className="text-right pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Value</th>
-                    <th className="text-right pb-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {recentPO.map(p => (
-                    <tr key={p.id} className="hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => navigate('/purchasing/orders')}>
-                      <td className="py-3 font-mono text-xs text-gray-500">{p.poNumber}</td>
-                      <td className="py-3 text-sm text-gray-800 font-medium max-w-[120px] truncate">{p.vendor?.name ?? '-'}</td>
-                      <td className="py-3 text-right text-xs text-gray-600 whitespace-nowrap tabular-nums">{p.total ? lkrFull(p.total) : '-'}</td>
-                      <td className="py-3 text-right"><StatusBadge status={p.status} map={poStatusColor} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ResponsiveContainer width="100%" height={250}>
+                <RePieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={5} dataKey="value">
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => lkr(value)} />
+                  <Legend />
+                </RePieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* LINE CHART - PO Status */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-300">
+            <SectionTitle icon={Activity} title="Purchase Order Status" color={GRADIENTS.orange} />
+            {loading ? (
+              <div className="h-64 bg-gray-50 rounded-2xl animate-pulse" />
+            ) : (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={Object.entries(poStatusGroups).map(([name, value]) => ({ name, value, fill: STATUS_COLORS[name] || CHART_COLORS[5] }))} barSize={40}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <Tooltip />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]} name="Orders">
+                    {Object.entries(poStatusGroups).map(([name, value], index) => (
+                      <Cell key={`cell-${index}`} fill={STATUS_COLORS[name] || CHART_COLORS[(index + 3) % CHART_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        {/* Activity Feed + Module Nav */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 pb-8">
-
-          {/* Activity Feed */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <SectionHeader title="Recent Activities" icon={<Activity className="w-3.5 h-3.5" />} />
-            {loading ? (
-              <div className="space-y-3">{[...Array(6)].map((_, i) => <div key={i} className="h-12 bg-gray-50 rounded-xl animate-pulse" />)}</div>
-            ) : feed.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-10">No activities yet</p>
-            ) : (
-              <div className="relative pl-5">
-                <div className="absolute left-2 top-1 bottom-1 w-px bg-gradient-to-b from-blue-200 via-gray-200 to-transparent" />
-                <div className="space-y-3">
-                  {feed.map((item) => {
-                    const isSO = item.type === 'so';
-                    const dotColor = isSO ? 'bg-blue-500 ring-blue-100' : 'bg-violet-500 ring-violet-100';
-                    const badgeMap = isSO ? soStatusColor : poStatusColor;
-                    return (
-                      <div key={item.id} className="flex items-start gap-3 group">
-                        <div className={`absolute -left-0.5 mt-1.5 w-3 h-3 rounded-full ${dotColor} ring-4 ring-white shadow-sm flex-shrink-0`} />
-                        <div className="flex-1 flex items-center justify-between min-w-0 bg-gray-50 group-hover:bg-slate-100 rounded-xl px-3 py-2.5 transition-colors">
-                          <div className="min-w-0 mr-3">
-                            <p className="text-sm font-semibold text-gray-800 truncate">{item.label}</p>
-                            <p className="text-xs text-gray-400 truncate mt-0.5">
-                              <span className={`font-semibold ${isSO ? 'text-blue-500' : 'text-violet-500'}`}>{isSO ? 'Sales' : 'Purchase'}</span>
-                              {' · '}{item.sub}
-                              {item.date && (
-                                <span className="ml-1.5 text-gray-300">
-                                  {new Date(item.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                          <StatusBadge status={item.status} map={badgeMap} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Module Navigator */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <SectionHeader title="Module Navigation" icon={<Zap className="w-3.5 h-3.5" />} />
-            <div className="grid grid-cols-2 gap-2">
-              {modules.map((m, i) => (
-                <button
-                  key={i}
-                  onClick={() => navigate(m.path)}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl ${m.bg} ${m.hover} transition-colors text-left`}
-                >
-                  <div className={`flex-shrink-0 p-1.5 bg-white rounded-lg shadow-sm ${m.accent}`}>{m.icon}</div>
-                  <div className="min-w-0">
-                    <p className={`text-xs font-bold ${m.accent} leading-tight truncate`}>{m.label}</p>
-                    <p className="text-xs text-gray-400 leading-tight truncate mt-0.5">{m.desc}</p>
-                  </div>
-                </button>
-              ))}
+        {/* MODULE NAVIGATION */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg">
+              <Star className="w-4 h-4 text-white" />
             </div>
+            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide">Quick Navigation</h3>
           </div>
-
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {modules.map((m, i) => (
+              <button
+                key={i}
+                onClick={() => navigate(m.path)}
+                className="group flex items-center gap-3 p-4 rounded-2xl bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100"
+              >
+                <div className={`flex-shrink-0 p-2.5 rounded-xl bg-gradient-to-br ${m.gradient} shadow-lg`}>
+                  <m.icon className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">{m.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

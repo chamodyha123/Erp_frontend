@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import {
   DollarSign,
   ShoppingCart,
@@ -41,9 +41,11 @@ import {
   TrendingDown,
   GitBranch,
   LogIn,
-  X
+  X,
+  Sparkles,
+  Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SubMenuItem {
   path: string;
@@ -56,6 +58,7 @@ interface MenuItem {
   label: string;
   icon: React.ReactNode;
   subItems?: SubMenuItem[];
+  badge?: string;
 }
 
 const menuItems: MenuItem[] = [
@@ -181,93 +184,142 @@ const menuItems: MenuItem[] = [
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
+  const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Auto-expand parent when a child is active
+  useEffect(() => {
+    menuItems.forEach(item => {
+      if (item.subItems?.some(sub => location.pathname === sub.path || location.pathname.startsWith(sub.path + '/'))) {
+        setExpandedItems(prev => prev.includes(item.path) ? prev : [...prev, item.path]);
+      }
+    });
+  }, [location.pathname]);
 
   const toggleExpanded = (path: string) => {
     setExpandedItems(prev =>
-      prev.includes(path)
-        ? prev.filter(item => item !== path)
-        : [...prev, path]
+      prev.includes(path) ? prev.filter(item => item !== path) : [...prev, path]
     );
   };
 
+  const isParentActive = (item: MenuItem) => {
+    if (item.subItems) {
+      return item.subItems.some(sub => location.pathname === sub.path || location.pathname.startsWith(sub.path + '/'));
+    }
+    return location.pathname === item.path;
+  };
+
   return (
-    <div className="w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto">
-      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">ERP System</h1>
-          <p className="text-sm text-gray-500 mt-1">Enterprise Resource Planning</p>
+    <div className="w-64 bg-gradient-to-b from-slate-50 to-white border-r border-gray-200 h-screen overflow-y-auto flex flex-col">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-white/20 rounded-lg">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-xl font-black text-white tracking-tight">Nexa ERP</h1>
+            </div>
+            <p className="text-blue-200 text-xs mt-1 font-medium">Enterprise Resource Planning</p>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="lg:hidden p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="lg:hidden p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
       </div>
 
-      <nav className="p-4">
+      {/* Navigation */}
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {menuItems.map((item) => (
-          <div key={item.path} className="mb-1">
+          <div key={item.path}>
             {item.subItems ? (
               <>
                 <button
                   onClick={() => toggleExpanded(item.path)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group ${
+                    isParentActive(item)
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
                   <div className="flex items-center gap-3">
-                    {item.icon}
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <span className={`${isParentActive(item) ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'} transition-colors`}>
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
                   </div>
-                  {expandedItems.includes(item.path) ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {isParentActive(item) && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    )}
+                    {expandedItems.includes(item.path) ? (
+                      <ChevronDown className={`w-4 h-4 ${isParentActive(item) ? 'text-blue-500' : 'text-gray-400'}`} />
+                    ) : (
+                      <ChevronRight className={`w-4 h-4 ${isParentActive(item) ? 'text-blue-500' : 'text-gray-400'}`} />
+                    )}
+                  </div>
                 </button>
-                {expandedItems.includes(item.path) && (
-                  <div className="ml-4 mt-1 space-y-1">
+
+                {/* Sub-items with smooth expand */}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    expandedItems.includes(item.path) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
+                  <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l-2 border-gray-100 pl-2">
                     {item.subItems.map((subItem) => (
                       <NavLink
                         key={subItem.path}
                         to={subItem.path}
                         onClick={onClose}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors ${
+                          `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                             isActive
-                              ? 'bg-blue-50 text-blue-600 font-medium'
-                              : 'text-gray-600 hover:bg-gray-100'
+                              ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm border-l-2 border-blue-500 -ml-[10px] pl-[18px]'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                           }`
                         }
                       >
-                        {subItem.icon}
-                        {subItem.label}
+                        <span className="w-4 h-4 flex-shrink-0">{subItem.icon}</span>
+                        <span className="truncate">{subItem.label}</span>
                       </NavLink>
                     ))}
                   </div>
-                )}
+                </div>
               </>
             ) : (
               <NavLink
                 to={item.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
                     isActive
-                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`
                 }
               >
-                {item.icon}
-                <span className="text-sm font-medium">{item.label}</span>
+                <span className={location.pathname === item.path ? 'text-blue-600' : 'text-gray-400'}>{item.icon}</span>
+                <span>{item.label}</span>
+                {location.pathname === item.path && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
+                )}
               </NavLink>
             )}
           </div>
         ))}
       </nav>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Sparkles className="w-3 h-3 text-amber-500" />
+          <span>ERP v1.0 • Powered by Spring Boot</span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 ﻿import { useState, useEffect } from 'react';
 import { Flag, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { milestoneService, type Milestone } from '@/services/projectSubService';
+import projectService from '@/services/projectService';
 import { Modal, FormField, DetailRow, ModalBtn, inputCls, selectCls } from '@/app/components/ui/Modal';
 
-const statusColor: Record<string,string> = {
+const statusColor: Record<string, string> = {
   PENDING: 'bg-gray-100 text-gray-800',
   IN_PROGRESS: 'bg-blue-100 text-blue-800',
   COMPLETED: 'bg-green-100 text-green-800',
@@ -26,6 +27,13 @@ export function Milestones() {
   const [selected, setSelected] = useState<Milestone | null>(null);
   const [form, setForm] = useState(blank());
   const [deleteConfirm, setDeleteConfirm] = useState<Milestone | null>(null);
+
+  // Project list for dropdown
+  const [projects, setProjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    projectService.getAll({ size: 500 }).then(res => setProjects(res.content ?? []));
+  }, []);
 
   const load = () => {
     setLoading(true);
@@ -57,8 +65,17 @@ export function Milestones() {
   };
 
   const handleSubmit = () => {
-    const payload = { ...form, project: { id: form.projectId } };
-    delete (payload as any).projectId;
+    if (!form.name?.trim()) {
+      alert('Milestone name is required!');
+      return;
+    }
+    const payload = {
+      name: form.name,
+      project: form.projectId ? { id: form.projectId } : null,
+      dueDate: form.dueDate,
+      status: form.status,
+      description: form.description,
+    };
 
     if (selected) {
       milestoneService.update(selected.id, payload)
@@ -87,10 +104,7 @@ export function Milestones() {
           </h1>
           <p className="text-gray-500 mt-1">Manage project milestones</p>
         </div>
-        <button
-          onClick={() => { setSelected(null); setForm(blank()); setModal('form'); }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
+        <button onClick={() => { setSelected(null); setForm(blank()); setModal('form'); }} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           <Plus className="w-5 h-5" /> New Milestone
         </button>
       </div>
@@ -98,25 +112,16 @@ export function Milestones() {
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
         <div className="flex-1 relative max-w-md">
           <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search milestones..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search milestones..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-400">Loading data...</div>
-        ) : (
+        {loading ? <div className="p-8 text-center text-gray-400">Loading data...</div> : (
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['Name','Project','Due Date','Status','Actions'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-sm font-semibold text-gray-900">{h}</th>
-                ))}
+                {['Name', 'Project', 'Due Date', 'Status', 'Actions'].map(h => <th key={h} className="text-left px-4 py-3 text-sm font-semibold text-gray-900">{h}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -126,9 +131,7 @@ export function Milestones() {
                   <td className="px-4 py-4 text-sm text-gray-600">{r.project?.name ?? '-'}</td>
                   <td className="px-4 py-4 text-sm text-gray-600">{r.dueDate ?? '-'}</td>
                   <td className="px-4 py-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status] ?? 'bg-gray-100 text-gray-800'}`}>
-                      {r.status}
-                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status] ?? 'bg-gray-100 text-gray-800'}`}>{r.status}</span>
                   </td>
                   <td className="px-4 py-4 text-sm">
                     <div className="flex items-center gap-2">
@@ -163,20 +166,20 @@ export function Milestones() {
         onClose={close}
         title={selected ? 'Edit Milestone' : 'New Milestone'}
         size="md"
-        footer={
-          <>
-            <ModalBtn onClick={close}>Cancel</ModalBtn>
-            <ModalBtn variant="primary" onClick={handleSubmit}>{selected ? 'Update' : 'Create'}</ModalBtn>
-          </>
-        }
+        footer={<><ModalBtn onClick={close}>Cancel</ModalBtn><ModalBtn variant="primary" onClick={handleSubmit}>{selected ? 'Update' : 'Create'}</ModalBtn></>}
       >
         <div className="grid grid-cols-2 gap-4">
           <FormField label="Name" required>
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inputCls} />
           </FormField>
-          <FormField label="Project ID" required>
-            <input type="number" value={form.projectId || ''} onChange={e => setForm(f => ({ ...f, projectId: Number(e.target.value) }))} className={inputCls} />
+
+          <FormField label="Project" required>
+            <select value={form.projectId} onChange={e => setForm(f => ({ ...f, projectId: Number(e.target.value) }))} className={selectCls}>
+              <option value={0}>-- Select --</option>
+              {projects.map(p => <option key={p.id} value={p.id}>{p.name} ({p.projectCode})</option>)}
+            </select>
           </FormField>
+
           <FormField label="Due Date">
             <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={inputCls} />
           </FormField>
@@ -188,22 +191,17 @@ export function Milestones() {
               <option value="OVERDUE">Overdue</option>
             </select>
           </FormField>
+          <div className="col-span-2">
+            <FormField label="Description">
+              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className={inputCls} rows={3} />
+            </FormField>
+          </div>
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        open={!!deleteConfirm}
-        onClose={() => setDeleteConfirm(null)}
-        title="Confirm Delete"
-        size="sm"
-        footer={
-          <>
-            <ModalBtn onClick={() => setDeleteConfirm(null)}>Cancel</ModalBtn>
-            <ModalBtn variant="danger" onClick={handleDelete}>Delete</ModalBtn>
-          </>
-        }
-      >
+      {/* Delete Confirmation */}
+      <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Confirm Delete" size="sm"
+        footer={<><ModalBtn onClick={() => setDeleteConfirm(null)}>Cancel</ModalBtn><ModalBtn variant="danger" onClick={handleDelete}>Delete</ModalBtn></>}>
         <p>Are you sure you want to delete <strong>{deleteConfirm?.name}</strong>?</p>
       </Modal>
     </div>
