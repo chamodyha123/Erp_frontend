@@ -13,6 +13,10 @@ import userService, {
   type User,
 } from '@/services/userService';
 
+import employeeService, {
+  type Employee,
+} from '@/services/employeeService';
+
 import {
   DetailRow,
   FormField,
@@ -28,6 +32,7 @@ type UserForm = {
   password: string;
   role: string;
   enabled: boolean;
+  employeeId: string;
 };
 
 const roleOptions = [
@@ -49,6 +54,7 @@ const blankForm = (): UserForm => ({
   password: '',
   role: 'EMPLOYEE',
   enabled: true,
+  employeeId: '',
 });
 
 const formatDate = (
@@ -98,8 +104,11 @@ const getErrorMessage = (
 
 export function Users() {
   const [records, setRecords] = useState<User[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [employeesLoading, setEmployeesLoading] =
+    useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -147,8 +156,31 @@ export function Users() {
     }
   };
 
+  const loadEmployees = async () => {
+    setEmployeesLoading(true);
+
+    try {
+      const response = await employeeService.getAll({
+        page: 0,
+        size: 1000,
+      });
+
+      setEmployees(
+        Array.isArray(response.content)
+          ? response.content
+          : [],
+      );
+    } catch (error: unknown) {
+      console.error('Failed to load employees:', error);
+      setEmployees([]);
+    } finally {
+      setEmployeesLoading(false);
+    }
+  };
+
   useEffect(() => {
     void loadUsers();
+    void loadEmployees();
   }, []);
 
   const filteredRecords = useMemo(() => {
@@ -223,6 +255,11 @@ export function Users() {
         user.roles?.[0] ??
         'EMPLOYEE',
       enabled: user.enabled ?? false,
+      employeeId:
+        user.employeeId !== null &&
+        user.employeeId !== undefined
+          ? String(user.employeeId)
+          : '',
     });
 
     setFormError('');
@@ -295,6 +332,9 @@ export function Users() {
         password: form.password.trim(),
         role: form.role,
         enabled: form.enabled,
+        employeeId: form.employeeId
+          ? Number(form.employeeId)
+          : null,
       });
 
       await loadUsers();
@@ -336,7 +376,9 @@ export function Users() {
         email: form.email.trim().toLowerCase(),
         role: form.role,
         enabled: form.enabled,
-        employeeId: selected.employeeId ?? null,
+        employeeId: form.employeeId
+          ? Number(form.employeeId)
+          : null,
       });
 
       if (form.password.trim()) {
@@ -410,13 +452,18 @@ export function Users() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => void loadUsers()}
-            disabled={loading}
+            onClick={() => {
+              void loadUsers();
+              void loadEmployees();
+            }}
+            disabled={loading || employeesLoading}
             className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw
               className={`h-5 w-5 ${
-                loading ? 'animate-spin' : ''
+                loading || employeesLoading
+                  ? 'animate-spin'
+                  : ''
               }`}
             />
             Refresh
@@ -758,6 +805,45 @@ export function Users() {
             />
           </FormField>
 
+
+          <FormField label="Employee">
+            <select
+              value={form.employeeId}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  employeeId: event.target.value,
+                }))
+              }
+              className={selectCls}
+              disabled={saving || employeesLoading}
+            >
+              <option value="">
+                {employeesLoading
+                  ? 'Loading employees...'
+                  : 'Select employee'}
+              </option>
+
+              {employees.map((employee) => (
+                <option
+                  key={employee.id}
+                  value={employee.id}
+                >
+                  {employee.employeeId
+                    ? `${employee.employeeId} - ${employee.fullName}`
+                    : employee.fullName}
+                </option>
+              ))}
+            </select>
+
+            {!employeesLoading &&
+              employees.length === 0 && (
+                <p className="mt-1 text-xs text-amber-600">
+                  No employees are available.
+                </p>
+              )}
+          </FormField>
+
           <FormField label="Password" required>
             <input
               type="password"
@@ -882,6 +968,38 @@ export function Users() {
               disabled={saving}
               autoComplete="email"
             />
+          </FormField>
+
+
+          <FormField label="Employee">
+            <select
+              value={form.employeeId}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  employeeId: event.target.value,
+                }))
+              }
+              className={selectCls}
+              disabled={saving || employeesLoading}
+            >
+              <option value="">
+                {employeesLoading
+                  ? 'Loading employees...'
+                  : 'No employee selected'}
+              </option>
+
+              {employees.map((employee) => (
+                <option
+                  key={employee.id}
+                  value={employee.id}
+                >
+                  {employee.employeeId
+                    ? `${employee.employeeId} - ${employee.fullName}`
+                    : employee.fullName}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           <FormField label="New Password">
