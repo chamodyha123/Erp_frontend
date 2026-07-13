@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Search, Shield } from 'lucide-react';
+import { Pencil, Plus, Search, Shield, Trash2 } from 'lucide-react';
 
 import { mockRoles } from '@/data/mockData';
 
@@ -240,14 +240,14 @@ export function Roles() {
                   </td>
 
                   <td className="px-4 py-4">
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-3 whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => {
                           setSelected(role);
                           setModal('view');
                         }}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        className="font-medium text-blue-600 transition hover:text-blue-800"
                       >
                         View
                       </button>
@@ -255,9 +255,11 @@ export function Roles() {
                       <button
                         type="button"
                         onClick={() => openEdit(role)}
-                        className="text-sm text-yellow-600 hover:text-yellow-800"
+                        className="inline-flex items-center justify-center text-amber-500 transition hover:text-amber-700"
+                        aria-label={`Edit ${role.name}`}
+                        title="Edit"
                       >
-                        Edit
+                        <Pencil className="h-5 w-5" />
                       </button>
 
                       <button
@@ -266,9 +268,11 @@ export function Roles() {
                           setSelected(role);
                           setModal('delete');
                         }}
-                        className="text-sm text-red-600 hover:text-red-800"
+                        className="inline-flex items-center justify-center text-red-600 transition hover:text-red-800"
+                        aria-label={`Delete ${role.name}`}
+                        title="Delete"
                       >
-                        Delete
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
                   </td>

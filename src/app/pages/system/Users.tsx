@@ -3,6 +3,7 @@ import {
   Filter,
   Plus,
   Search,
+  Trash2,
   Users as UsersIcon,
 } from 'lucide-react';
 
@@ -401,7 +402,7 @@ export function Users() {
                     </td>
 
                     <td className="px-4 py-4 text-sm">
-                      <div className="flex gap-3">
+                      <div className="flex items-center gap-3 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => {
@@ -409,7 +410,7 @@ export function Users() {
                             setFormError('');
                             setModal('view');
                           }}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="font-medium text-blue-600 transition hover:text-blue-800"
                         >
                           View
                         </button>
@@ -421,9 +422,11 @@ export function Users() {
                             setFormError('');
                             setModal('delete');
                           }}
-                          className="text-red-600 hover:text-red-800"
+                          className="inline-flex items-center justify-center text-red-600 transition hover:text-red-800"
+                          aria-label={`Delete ${record.username}`}
+                          title="Delete"
                         >
-                          Delete
+                          <Trash2 className="h-5 w-5" />
                         </button>
                       </div>
                     </td>
