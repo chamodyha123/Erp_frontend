@@ -136,3 +136,8 @@ VITE_API_BASE_URL=http://localhost:8081/api/v1
 | CRM | `/crm` | Leads, Opportunities, Campaigns |
 | Assets | `/assets` | Assets, Maintenance, Depreciation |
 | System | `/system` | Users, Roles, Settings, Audit Logs |
+---
+
+## 🤝 Contributing
+
+Contributions are welcome. Please create a pull request before making major changes.
