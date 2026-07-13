@@ -147,3 +147,6 @@ This project is intended for educational and learning purposes.
 ## 👨‍💻 Authors
 
 Developed by the NexaERP Development Team.
+## 📞 Support
+
+For issues and feature requests, please open an issue in this repository.
