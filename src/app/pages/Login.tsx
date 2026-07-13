@@ -442,11 +442,9 @@ export function Login() {
           <span className="text-white font-bold text-xl tracking-wider">Nexa<span className="text-sky-400">ERP</span></span>
         </div>
         <div className="flex items-center gap-2 text-xs text-blue-200 bg-white/[0.02] border border-white/[0.05] px-4 py-2 rounded-xl font-mono">
-<<<<<<< HEAD
-          <Lock className="w-3.5 h-3.5 text-sky-400 animate-pulse" /> END TO END ENCRYPTED LAYER
-=======
+
           <Lock className="w-3.5 h-3.5 text-sky-400 animate-pulse" /> Unified Architecture Gateway
->>>>>>> c368755036f0d55258782078dc366dd21898013d
+
         </div>
       </div>
 
@@ -638,11 +636,7 @@ export function Login() {
                     <input type="checkbox" className="mr-2 rounded border-blue-900/60 bg-blue-950 text-sky-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5" />
                     Remember token
                   </label>
-<<<<<<< HEAD
-                  <a href="#" className="text-sky-400 hover:text-sky-300 transition-colors font-medium">
-                    Recover key?
-                  </a>
-=======
+
                   <button
                     type="button"
                     onClick={() => navigate('/forgot-password')}
@@ -650,7 +644,7 @@ export function Login() {
                   >
                     Forgot password?
                   </button>
->>>>>>> c368755036f0d55258782078dc366dd21898013d
+
                 </div>
 
                 <button
@@ -669,13 +663,11 @@ export function Login() {
               )}
 
               <div className="mt-5 p-3 bg-white/[0.01] border border-white/[0.03] rounded-xl text-center">
-<<<<<<< HEAD
-                
-=======
+
                 <p className="text-blue-400/60 text-[11px] font-mono">
                   Preset Node: <span className="text-blue-200 bg-slate-900 px-1.5 py-0.5 rounded">admin</span> / <span className="text-blue-200 bg-slate-900 px-1.5 py-0.5 rounded">Admin1234!</span>
                 </p>
->>>>>>> c368755036f0d55258782078dc366dd21898013d
+
               </div>
 
               <div className="mt-6 pt-4 border-t border-white/[0.03] grid grid-cols-2 gap-2 text-[10px] text-blue-300/70 font-mono">
@@ -691,19 +683,13 @@ export function Login() {
       </div>
 
       <div className="relative z-20 w-full text-center py-3.5 border-t border-white/[0.03] bg-slate-950/60 text-[11px] text-blue-400/60 tracking-wider flex flex-col sm:flex-row items-center justify-between px-6 gap-2 font-mono">
-<<<<<<< HEAD
-        <p>© 2026 NexaERP Infrastructure.</p>
-        <div className="flex items-center gap-4 text-blue-500/60">
-         
-    
-          
-=======
+
         <p>© 2026 NexaERP Infrastructure Operations. Auth Architecture Layer.</p>
         <div className="flex items-center gap-4 text-blue-500/60">
           <a href="#" className="hover:text-blue-400 transition-colors">Anti-Grav Target Sync</a>
           <span>•</span>
           <a href="#" className="hover:text-blue-400 transition-colors">Core Layer: Active</a>
->>>>>>> c368755036f0d55258782078dc366dd21898013d
+
         </div>
       </div>
 
