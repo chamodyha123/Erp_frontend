@@ -8,7 +8,7 @@ A modern Enterprise Resource Planning (ERP) frontend built with **React 18**, **
 - Folder Structure
 - Prerequisites
 - Installation
-- Environment Configuration..
+- Environment Configuration...
 
 
 ## 🚀 Key Features
