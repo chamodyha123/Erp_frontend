@@ -144,3 +144,6 @@ Contributions are welcome. Please create a pull request before making major chan
 ## 📄 License
 
 This project is intended for educational and learning purposes.
+## 👨‍💻 Authors
+
+Developed by the NexaERP Development Team.
