@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Filter,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -8,13 +9,8 @@ import {
 } from 'lucide-react';
 
 import userService, {
-  type CreateUserRequest,
   type User,
 } from '@/services/userService';
-
-import employeeService, {
-  type Employee,
-} from '@/services/employeeService';
 
 import {
   DetailRow,
@@ -24,6 +20,14 @@ import {
   ModalBtn,
   selectCls,
 } from '@/app/components/ui/Modal';
+
+type UserForm = {
+  username: string;
+  email: string;
+  password: string;
+  role: string;
+  enabled: boolean;
+};
 
 const roleOptions = [
   'SUPER_ADMIN',
@@ -38,77 +42,50 @@ const roleOptions = [
   'VIEWER',
 ];
 
-const blankForm = (): CreateUserRequest => ({
+const blankForm = (): UserForm => ({
   username: '',
   email: '',
   password: '',
-  employeeId: undefined,
-  roles: ['EMPLOYEE'],
+  role: 'EMPLOYEE',
+  enabled: true,
 });
 
 export function Users() {
   const [records, setRecords] = useState<User[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
   const [loading, setLoading] = useState(true);
-  const [employeesLoading, setEmployeesLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
-
   const [search, setSearch] = useState('');
 
   const [modal, setModal] = useState<
-    'view' | 'new' | 'delete' | null
+    'view' | 'new' | 'edit' | 'delete' | null
   >(null);
 
   const [selected, setSelected] = useState<User | null>(null);
-
-  const [form, setForm] = useState<CreateUserRequest>(
-    blankForm(),
-  );
+  const [form, setForm] = useState<UserForm>(blankForm());
 
   const loadUsers = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const users = await userService.getAll();
-      setRecords(users);
+      const response = await userService.getAll({
+        page: 0,
+        size: 1000,
+      });
+
+      setRecords(response.content ?? []);
     } catch (err: any) {
       setRecords([]);
-
       setError(
         err?.response?.data?.message ||
           'Failed to load users. Check whether the backend is running.',
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadEmployees = async () => {
-    setEmployeesLoading(true);
-    setFormError('');
-
-    try {
-      const response = await employeeService.getAll({
-        page: 0,
-        size: 1000,
-      });
-
-      setEmployees(response.content ?? []);
-    } catch (err: any) {
-      setEmployees([]);
-
-      setFormError(
-        err?.response?.data?.message ||
-          'Failed to load employees.',
-      );
-    } finally {
-      setEmployeesLoading(false);
     }
   };
 
@@ -126,15 +103,14 @@ export function Users() {
     return records.filter((record) => {
       const username = record.username?.toLowerCase() ?? '';
       const email = record.email?.toLowerCase() ?? '';
-      const roles = record.roles?.join(' ').toLowerCase() ?? '';
-      const employeeName =
-        record.employeeName?.toLowerCase() ?? '';
+      const role = record.role?.toLowerCase() ?? '';
+      const status = record.enabled ? 'active' : 'inactive';
 
       return (
         username.includes(keyword) ||
         email.includes(keyword) ||
-        roles.includes(keyword) ||
-        employeeName.includes(keyword)
+        role.includes(keyword) ||
+        status.includes(keyword)
       );
     });
   }, [records, search]);
@@ -150,16 +126,27 @@ export function Users() {
     setFormError('');
   };
 
-  const openNewUserModal = async () => {
-    setForm(blankForm());
+  const openNew = () => {
     setSelected(null);
+    setForm(blankForm());
     setFormError('');
     setModal('new');
-
-    await loadEmployees();
   };
 
-  const validateForm = (): string | null => {
+  const openEdit = (user: User) => {
+    setSelected(user);
+    setForm({
+      username: user.username ?? '',
+      email: user.email ?? '',
+      password: '',
+      role: user.role ?? 'EMPLOYEE',
+      enabled: user.enabled,
+    });
+    setFormError('');
+    setModal('edit');
+  };
+
+  const validateForm = (isEditing: boolean): string | null => {
     const username = form.username.trim();
     const email = form.email.trim();
     const password = form.password.trim();
@@ -176,32 +163,31 @@ export function Users() {
       return 'Email is required.';
     }
 
-    const emailPattern =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
       return 'Enter a valid email address.';
     }
 
-    if (!password) {
+    if (!isEditing && !password) {
       return 'Password is required.';
     }
 
-    if (password.length < 6) {
+    if (password && password.length < 6) {
       return 'Password must contain at least 6 characters.';
     }
 
-    if (!form.roles || form.roles.length === 0) {
-      return 'A role is required.';
+    if (!form.role) {
+      return 'Role is required.';
     }
 
     return null;
   };
 
-  const handleNew = async () => {
+  const handleCreate = async () => {
     setFormError('');
 
-    const validationError = validateForm();
+    const validationError = validateForm(false);
 
     if (validationError) {
       setFormError(validationError);
@@ -211,42 +197,64 @@ export function Users() {
     setSaving(true);
 
     try {
-      const request: CreateUserRequest = {
+      await userService.create({
         username: form.username.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
-        roles: form.roles,
+        role: form.role,
+        enabled: form.enabled,
+      });
+
+      await loadUsers();
+      closeModal();
+    } catch (err: any) {
+      setFormError(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to create user.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!selected) {
+      return;
+    }
+
+    setFormError('');
+
+    const validationError = validateForm(true);
+
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const request: Partial<User> & { password?: string } = {
+        username: form.username.trim(),
+        email: form.email.trim().toLowerCase(),
+        role: form.role,
+        enabled: form.enabled,
       };
 
-      /*
-       * Only include employeeId when the user has selected
-       * an actual employee from the dropdown.
-       *
-       * The selected value is the employee database primary key,
-       * not the visible employee code such as EMP101.
-       */
-      if (
-        form.employeeId !== undefined &&
-        form.employeeId !== null &&
-        form.employeeId > 0
-      ) {
-        request.employeeId = form.employeeId;
+      if (form.password.trim()) {
+        request.password = form.password;
       }
 
-      await userService.create(request);
+      await userService.update(selected.id, request);
       await loadUsers();
-
-      setModal(null);
-      setSelected(null);
-      setForm(blankForm());
-      setFormError('');
+      closeModal();
     } catch (err: any) {
-      const message =
+      setFormError(
         err?.response?.data?.message ||
-        err?.message ||
-        'Failed to create user.';
-
-      setFormError(message);
+          err?.message ||
+          'Failed to update user.',
+      );
     } finally {
       setSaving(false);
     }
@@ -263,13 +271,11 @@ export function Users() {
     try {
       await userService.delete(selected.id);
       await loadUsers();
-
-      setModal(null);
-      setSelected(null);
-      setFormError('');
+      closeModal();
     } catch (err: any) {
       setFormError(
         err?.response?.data?.message ||
+          err?.message ||
           'Failed to delete user.',
       );
     } finally {
@@ -293,7 +299,7 @@ export function Users() {
 
         <button
           type="button"
-          onClick={() => void openNewUserModal()}
+          onClick={openNew}
           className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
         >
           <Plus className="h-5 w-5" />
@@ -315,9 +321,7 @@ export function Users() {
             <input
               type="text"
               value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={(event) => setSearch(event.target.value)}
               placeholder="Search users..."
               className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -350,9 +354,9 @@ export function Users() {
                   {[
                     'Username',
                     'Email',
-                    'Employee',
-                    'Roles',
+                    'Role',
                     'Status',
+                    'Created At',
                     'Actions',
                   ].map((heading) => (
                     <th
@@ -376,29 +380,27 @@ export function Users() {
                     </td>
 
                     <td className="px-4 py-4 text-sm text-gray-600">
-                      {record.email}
+                      {record.email || '-'}
                     </td>
 
                     <td className="px-4 py-4 text-sm text-gray-600">
-                      {record.employeeName || '-'}
-                    </td>
-
-                    <td className="px-4 py-4 text-sm text-gray-600">
-                      {record.roles?.join(', ') || '-'}
+                      {record.role || '-'}
                     </td>
 
                     <td className="px-4 py-4">
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          record.isActive
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          record.enabled
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        {record.isActive
-                          ? 'Active'
-                          : 'Inactive'}
+                        {record.enabled ? 'Active' : 'Inactive'}
                       </span>
+                    </td>
+
+                    <td className="px-4 py-4 text-sm text-gray-600">
+                      {record.createdAt || '-'}
                     </td>
 
                     <td className="px-4 py-4 text-sm">
@@ -413,6 +415,16 @@ export function Users() {
                           className="font-medium text-blue-600 transition hover:text-blue-800"
                         >
                           View
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openEdit(record)}
+                          className="inline-flex items-center justify-center text-amber-500 transition hover:text-amber-700"
+                          aria-label={`Edit ${record.username}`}
+                          title="Edit"
+                        >
+                          <Pencil className="h-5 w-5" />
                         </button>
 
                         <button
@@ -443,207 +455,160 @@ export function Users() {
         onClose={closeModal}
         title="User Details"
         size="md"
-        footer={
-          <ModalBtn onClick={closeModal}>
-            Close
-          </ModalBtn>
-        }
+        footer={<ModalBtn onClick={closeModal}>Close</ModalBtn>}
       >
         {selected && (
           <div>
-            <DetailRow
-              label="Username"
-              value={selected.username}
-            />
-
-            <DetailRow
-              label="Email"
-              value={selected.email}
-            />
-
-            <DetailRow
-              label="Roles"
-              value={selected.roles?.join(', ') || '-'}
-            />
-
-            <DetailRow
-              label="Employee"
-              value={selected.employeeName || '-'}
-            />
-
+            <DetailRow label="Username" value={selected.username} />
+            <DetailRow label="Email" value={selected.email || '-'} />
+            <DetailRow label="Role" value={selected.role || '-'} />
             <DetailRow
               label="Status"
-              value={
-                selected.isActive
-                  ? 'Active'
-                  : 'Inactive'
-              }
+              value={selected.enabled ? 'Active' : 'Inactive'}
+            />
+            <DetailRow
+              label="Created At"
+              value={selected.createdAt || '-'}
             />
           </div>
         )}
       </Modal>
 
-      <Modal
-        open={modal === 'new'}
-        onClose={closeModal}
-        title="New User"
-        size="md"
-        footer={
-          <>
-            <ModalBtn
-              onClick={closeModal}
-              disabled={saving}
-            >
-              Cancel
-            </ModalBtn>
-
-            <ModalBtn
-              variant="primary"
-              onClick={() => void handleNew()}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </ModalBtn>
-          </>
-        }
-      >
-        {formError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {formError}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormField label="Username" required>
-            <input
-              type="text"
-              value={form.username}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  username: event.target.value,
-                }))
-              }
-              placeholder="Enter username"
-              className={inputCls}
-              disabled={saving}
-            />
-          </FormField>
-
-          <FormField label="Email" required>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  email: event.target.value,
-                }))
-              }
-              placeholder="Enter email address"
-              className={inputCls}
-              disabled={saving}
-            />
-          </FormField>
-
-          <FormField label="Password" required>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  password: event.target.value,
-                }))
-              }
-              placeholder="Minimum 6 characters"
-              className={inputCls}
-              disabled={saving}
-            />
-          </FormField>
-
-          <FormField label="Role" required>
-            <select
-              value={form.roles[0] ?? 'EMPLOYEE'}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  roles: [event.target.value],
-                }))
-              }
-              className={selectCls}
-              disabled={saving}
-            >
-              {roleOptions.map((role) => (
-                <option
-                  key={role}
-                  value={role}
-                >
-                  {role}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <div className="md:col-span-2">
-            <FormField label="Employee">
-              <select
-                value={form.employeeId ?? ''}
-                onChange={(event) => {
-                  const value = event.target.value;
-
-                  setForm((current) => ({
-                    ...current,
-                    employeeId:
-                      value === ''
-                        ? undefined
-                        : Number(value),
-                  }));
-                }}
-                className={selectCls}
-                disabled={employeesLoading || saving}
+      {(['new', 'edit'] as const).map((mode) => (
+        <Modal
+          key={mode}
+          open={modal === mode}
+          onClose={closeModal}
+          title={mode === 'new' ? 'New User' : 'Edit User'}
+          size="md"
+          footer={
+            <>
+              <ModalBtn
+                onClick={closeModal}
+                disabled={saving}
               >
-                <option value="">
-                  No linked employee
-                </option>
+                Cancel
+              </ModalBtn>
 
-                {employees.map((employee) => (
-                  <option
-                    key={employee.id}
-                    value={employee.id}
-                  >
-                    {employee.employeeId} -{' '}
-                    {employee.fullName}
-                    {employee.position
-                      ? ` (${employee.position})`
-                      : ''}
+              <ModalBtn
+                variant="primary"
+                onClick={() =>
+                  void (mode === 'new'
+                    ? handleCreate()
+                    : handleEdit())
+                }
+                disabled={saving}
+              >
+                {saving
+                  ? 'Saving...'
+                  : mode === 'new'
+                    ? 'Create'
+                    : 'Update'}
+              </ModalBtn>
+            </>
+          }
+        >
+          {formError && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {formError}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <FormField label="Username" required>
+              <input
+                type="text"
+                value={form.username}
+                onChange={(event) =>
+                  setForm((current: UserForm) => ({
+                    ...current,
+                    username: event.target.value,
+                  }))
+                }
+                placeholder="Enter username"
+                className={inputCls}
+                disabled={saving}
+              />
+            </FormField>
+
+            <FormField label="Email" required>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) =>
+                  setForm((current: UserForm) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+                placeholder="Enter email address"
+                className={inputCls}
+                disabled={saving}
+              />
+            </FormField>
+
+            <FormField
+              label={mode === 'new' ? 'Password' : 'New Password'}
+              required={mode === 'new'}
+            >
+              <input
+                type="password"
+                value={form.password}
+                onChange={(event) =>
+                  setForm((current: UserForm) => ({
+                    ...current,
+                    password: event.target.value,
+                  }))
+                }
+                placeholder={
+                  mode === 'new'
+                    ? 'Minimum 6 characters'
+                    : 'Leave blank to keep current password'
+                }
+                className={inputCls}
+                disabled={saving}
+              />
+            </FormField>
+
+            <FormField label="Role" required>
+              <select
+                value={form.role}
+                onChange={(event) =>
+                  setForm((current: UserForm) => ({
+                    ...current,
+                    role: event.target.value,
+                  }))
+                }
+                className={selectCls}
+                disabled={saving}
+              >
+                {roleOptions.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
                   </option>
                 ))}
               </select>
+            </FormField>
 
-              {employeesLoading && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Loading employees...
-                </p>
-              )}
-
-              {!employeesLoading &&
-                employees.length === 0 && (
-                  <p className="mt-1 text-xs text-amber-600">
-                    No employees are available. You can
-                    create the user without linking an
-                    employee.
-                  </p>
-                )}
-
-              <p className="mt-1 text-xs text-gray-500">
-                Select an employee from the list. Do not
-                manually enter an employee code.
-              </p>
+            <FormField label="Status">
+              <select
+                value={form.enabled ? 'active' : 'inactive'}
+                onChange={(event) =>
+                  setForm((current: UserForm) => ({
+                    ...current,
+                    enabled: event.target.value === 'active',
+                  }))
+                }
+                className={selectCls}
+                disabled={saving}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </FormField>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      ))}
 
       <Modal
         open={modal === 'delete'}
