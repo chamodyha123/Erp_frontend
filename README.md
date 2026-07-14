@@ -2,7 +2,7 @@
 
 A modern Enterprise Resource Planning (ERP) frontend built with **React 18**, **TypeScript**, **Vite**, and **Tailwind CSS**, integrated with a **Spring Boot REST API**.
 
-## 📖 Table of Contents
+##  Table of Contents
 - Key Features
 - Tech Stack
 - Folder Structure
@@ -10,8 +10,14 @@ A modern Enterprise Resource Planning (ERP) frontend built with **React 18**, **
 - Installation
 - Environment Configuration...
 
+##  Business Process Analysis & Module Overview
 
-## 🚀 Key Features
+A concise breakdown of NexaERP's core architecture, including domain research, system challenges, 11-module integration workflow, and Azure cloud deployment strategy.
+
+[![View PDF Report](https://img.shields.io/badge/View_NexaERP_Report-PDF-red?style=for-the-badge&logo=adobe-acrobat-reader&logoColor=white)](https://github.com/dilshan24142/Erp_backend/blob/dev/src/main/resources/NexaERP_Report_Group_09.pdf)
+
+
+##  Key Features
 - JWT Authentication
 - Role-Based Access Control (RBAC)
 - Dashboard with KPIs & Activity Feed
