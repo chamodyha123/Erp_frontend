@@ -11,7 +11,7 @@ A modern Enterprise Resource Planning (ERP) frontend built with **React 18**, **
 
 ##  Business Process Analysis & Module Overview
 
-A concise breakdown of NexaERP's core architecture, including domain research, system challenges, 11-module integration workflow, and Azure cloud deployment strategy.
+
 
 [![View PDF Report](https://img.shields.io/badge/View_NexaERP_Report-PDF-red?style=for-the-badge&logo=adobe-acrobat-reader&logoColor=white)](https://github.com/dilshan24142/Erp_backend/blob/dev/src/main/resources/NexaERP_Report_Group_09.pdf)
 
