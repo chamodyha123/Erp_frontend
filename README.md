@@ -23,15 +23,6 @@ Experience the application online:
 🔗 **Frontend:** https://nexaerp-frontend.vercel.app/
 
 
-##  Key Features
-- JWT Authentication
-- Role-Based Access Control (RBAC)
-- Dashboard with KPIs & Activity Feed
-- Finance, HR, Inventory, Sales, Purchasing, Manufacturing, CRM, Projects & Assets Modules
-- Responsive UI
-- Reusable Components
-- REST API Integration
-
 ## 🛠️ Tech Stack
 
 | Category | Technology |
