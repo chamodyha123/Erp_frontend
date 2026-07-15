@@ -1,325 +1,326 @@
-import { NavLink, useLocation } from 'react-router';
+import { useMemo, useState, type ReactNode } from 'react';
+import { NavLink } from 'react-router';
 import {
-  DollarSign,
-  ShoppingCart,
-  Package,
-  Warehouse,
-  Factory,
-  Users,
-  UserCircle,
-  FolderKanban,
-  FileBox,
-  Settings,
-  ChevronDown,
-  ChevronRight,
-  LayoutDashboard,
-  FileText,
-  BookOpen,
-  CreditCard,
-  Receipt,
-  Wallet,
-  Building2,
-  FileCheck,
-  ClipboardList,
-  Boxes,
   ArrowLeftRight,
-  ListChecks,
-  Cog,
-  FileArchive,
+  Banknote,
+  BookOpen,
+  Boxes,
+  Building2,
   Calendar,
   CalendarClock,
-  Banknote,
-  UserPlus,
-  TrendingUp,
-  Target,
-  Phone,
-  Megaphone,
   CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
   Clock,
-  Milestone,
-  Wrench,
-  TrendingDown,
+  Cog,
+  CreditCard,
+  DollarSign,
+  Factory,
+  FileBox,
+  FileCheck,
+  FileText,
+  FolderKanban,
   GitBranch,
+  LayoutDashboard,
+  ListChecks,
   LogIn,
+  Megaphone,
+  Milestone,
+  Package,
+  Phone,
+  Receipt,
+  Settings,
+  ShoppingCart,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  UserCircle,
+  UserPlus,
+  Users,
+  Wallet,
+  Warehouse,
+  Wrench,
   X,
-  Sparkles,
-  Zap,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+
+import { useAuth } from '@/context/AuthContext';
+import {
+  hasAllowedRole,
+  moduleRoles,
+  type AppRole,
+} from '@/config/roleAccess';
 
 interface SubMenuItem {
   path: string;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  allowedRoles: AppRole[];
 }
 
 interface MenuItem {
   path: string;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  allowedRoles: AppRole[];
   subItems?: SubMenuItem[];
-  badge?: string;
 }
 
 const menuItems: MenuItem[] = [
   {
     path: '/',
     label: 'Dashboard',
-    icon: <LayoutDashboard className="w-5 h-5" />,
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    allowedRoles: moduleRoles.dashboard,
   },
   {
     path: '/finance',
     label: 'Finance',
-    icon: <DollarSign className="w-5 h-5" />,
+    icon: <DollarSign className="h-5 w-5" />,
+    allowedRoles: moduleRoles.finance,
     subItems: [
-      { path: '/finance/chart-of-accounts', label: 'Chart of Accounts', icon: <BookOpen className="w-4 h-4" /> },
-      { path: '/finance/journal-entries', label: 'Journal Entries', icon: <FileText className="w-4 h-4" /> },
-      { path: '/finance/accounts-payable', label: 'Accounts Payable', icon: <CreditCard className="w-4 h-4" /> },
-      { path: '/finance/accounts-receivable', label: 'Accounts Receivable', icon: <Receipt className="w-4 h-4" /> },
-      { path: '/finance/budgets', label: 'Budgets', icon: <Wallet className="w-4 h-4" /> },
+      { path: '/finance/chart-of-accounts', label: 'Chart of Accounts', icon: <BookOpen className="h-4 w-4" />, allowedRoles: moduleRoles.finance },
+      { path: '/finance/journal-entries', label: 'Journal Entries', icon: <FileText className="h-4 w-4" />, allowedRoles: moduleRoles.finance },
+      { path: '/finance/accounts-payable', label: 'Accounts Payable', icon: <CreditCard className="h-4 w-4" />, allowedRoles: moduleRoles.finance },
+      { path: '/finance/accounts-receivable', label: 'Accounts Receivable', icon: <Receipt className="h-4 w-4" />, allowedRoles: moduleRoles.finance },
+      { path: '/finance/budgets', label: 'Budgets', icon: <Wallet className="h-4 w-4" />, allowedRoles: moduleRoles.finance },
     ],
   },
   {
     path: '/sales',
     label: 'Sales',
-    icon: <ShoppingCart className="w-5 h-5" />,
+    icon: <ShoppingCart className="h-5 w-5" />,
+    allowedRoles: moduleRoles.sales,
     subItems: [
-      { path: '/sales/customers', label: 'Customers', icon: <Users className="w-4 h-4" /> },
-      { path: '/sales/quotations', label: 'Quotations', icon: <FileCheck className="w-4 h-4" /> },
-      { path: '/sales/orders', label: 'Sales Orders', icon: <ClipboardList className="w-4 h-4" /> },
-      { path: '/sales/invoices', label: 'Invoices', icon: <Receipt className="w-4 h-4" /> },
+      { path: '/sales/customers', label: 'Customers', icon: <Users className="h-4 w-4" />, allowedRoles: moduleRoles.sales },
+      { path: '/sales/quotations', label: 'Quotations', icon: <FileCheck className="h-4 w-4" />, allowedRoles: moduleRoles.sales },
+      { path: '/sales/orders', label: 'Sales Orders', icon: <ClipboardList className="h-4 w-4" />, allowedRoles: moduleRoles.sales },
+      { path: '/sales/invoices', label: 'Invoices', icon: <Receipt className="h-4 w-4" />, allowedRoles: moduleRoles.sales },
     ],
   },
   {
     path: '/purchasing',
     label: 'Purchasing',
-    icon: <Package className="w-5 h-5" />,
+    icon: <Package className="h-5 w-5" />,
+    allowedRoles: moduleRoles.purchasing,
     subItems: [
-      { path: '/purchasing/vendors', label: 'Vendors', icon: <Building2 className="w-4 h-4" /> },
-      { path: '/purchasing/requisitions', label: 'Purchase Requisitions', icon: <FileText className="w-4 h-4" /> },
-      { path: '/purchasing/orders', label: 'Purchase Orders', icon: <ClipboardList className="w-4 h-4" /> },
-      { path: '/purchasing/invoices', label: 'Purchase Invoices', icon: <Receipt className="w-4 h-4" /> },
+      { path: '/purchasing/vendors', label: 'Vendors', icon: <Building2 className="h-4 w-4" />, allowedRoles: moduleRoles.purchasing },
+      { path: '/purchasing/requisitions', label: 'Requisitions', icon: <ListChecks className="h-4 w-4" />, allowedRoles: moduleRoles.purchasing },
+      { path: '/purchasing/orders', label: 'Purchase Orders', icon: <ClipboardList className="h-4 w-4" />, allowedRoles: moduleRoles.purchasing },
+      { path: '/purchasing/invoices', label: 'Purchase Invoices', icon: <Receipt className="h-4 w-4" />, allowedRoles: moduleRoles.purchasing },
     ],
   },
   {
     path: '/inventory',
     label: 'Inventory',
-    icon: <Warehouse className="w-5 h-5" />,
+    icon: <Warehouse className="h-5 w-5" />,
+    allowedRoles: moduleRoles.inventory,
     subItems: [
-      { path: '/inventory/products', label: 'Products', icon: <Boxes className="w-4 h-4" /> },
-      { path: '/inventory/warehouses', label: 'Warehouses', icon: <Warehouse className="w-4 h-4" /> },
-      { path: '/inventory/stock-levels', label: 'Stock Levels', icon: <ListChecks className="w-4 h-4" /> },
-      { path: '/inventory/stock-movements', label: 'Stock Movements', icon: <ArrowLeftRight className="w-4 h-4" /> },
+      { path: '/inventory/products', label: 'Products', icon: <Package className="h-4 w-4" />, allowedRoles: moduleRoles.inventory },
+      { path: '/inventory/warehouses', label: 'Warehouses', icon: <Warehouse className="h-4 w-4" />, allowedRoles: moduleRoles.inventory },
+      { path: '/inventory/stock-levels', label: 'Stock Levels', icon: <Boxes className="h-4 w-4" />, allowedRoles: moduleRoles.inventory },
+      { path: '/inventory/stock-movements', label: 'Stock Movements', icon: <ArrowLeftRight className="h-4 w-4" />, allowedRoles: moduleRoles.inventory },
     ],
   },
   {
     path: '/manufacturing',
     label: 'Manufacturing',
-    icon: <Factory className="w-5 h-5" />,
+    icon: <Factory className="h-5 w-5" />,
+    allowedRoles: moduleRoles.manufacturing,
     subItems: [
-      { path: '/manufacturing/bill-of-materials', label: 'Bill of Materials', icon: <FileArchive className="w-4 h-4" /> },
-      { path: '/manufacturing/work-orders', label: 'Work Orders', icon: <ClipboardList className="w-4 h-4" /> },
-      { path: '/manufacturing/production-orders', label: 'Production Orders', icon: <Cog className="w-4 h-4" /> },
-      { path: '/manufacturing/quality-control', label: 'Quality Control', icon: <CheckSquare className="w-4 h-4" /> },
+      { path: '/manufacturing/bill-of-materials', label: 'Bill of Materials', icon: <FileText className="h-4 w-4" />, allowedRoles: moduleRoles.manufacturing },
+      { path: '/manufacturing/work-orders', label: 'Work Orders', icon: <ClipboardList className="h-4 w-4" />, allowedRoles: moduleRoles.manufacturing },
+      { path: '/manufacturing/production-orders', label: 'Production Orders', icon: <Cog className="h-4 w-4" />, allowedRoles: moduleRoles.manufacturing },
+      { path: '/manufacturing/quality-control', label: 'Quality Control', icon: <CheckSquare className="h-4 w-4" />, allowedRoles: moduleRoles.manufacturing },
     ],
   },
   {
     path: '/hr',
     label: 'Human Resources',
-    icon: <Users className="w-5 h-5" />,
+    icon: <Users className="h-5 w-5" />,
+    allowedRoles: [...moduleRoles.hr, 'EMPLOYEE'],
     subItems: [
-      { path: '/hr/employees', label: 'Employees', icon: <UserCircle className="w-4 h-4" /> },
-      { path: '/hr/departments', label: 'Departments', icon: <Building2 className="w-4 h-4" /> },
-      { path: '/hr/attendance', label: 'Attendance', icon: <Calendar className="w-4 h-4" /> },
-      { path: '/hr/clock-in', label: 'Clock In / Out', icon: <LogIn className="w-4 h-4" /> },
-      { path: '/hr/leave', label: 'Leave Management', icon: <CalendarClock className="w-4 h-4" /> },
-      { path: '/hr/payroll', label: 'Payroll', icon: <Banknote className="w-4 h-4" /> },
-      { path: '/hr/recruitment', label: 'Recruitment', icon: <UserPlus className="w-4 h-4" /> },
+      { path: '/hr/employees', label: 'Employees', icon: <UserCircle className="h-4 w-4" />, allowedRoles: moduleRoles.hr },
+      { path: '/hr/departments', label: 'Departments', icon: <Building2 className="h-4 w-4" />, allowedRoles: moduleRoles.hr },
+      { path: '/hr/attendance', label: 'Attendance', icon: <Calendar className="h-4 w-4" />, allowedRoles: moduleRoles.hr },
+      { path: '/hr/clock-in', label: 'Clock In / Out', icon: <LogIn className="h-4 w-4" />, allowedRoles: moduleRoles.employeeSelfService },
+      { path: '/hr/leave', label: 'Leave Management', icon: <CalendarClock className="h-4 w-4" />, allowedRoles: moduleRoles.employeeSelfService },
+      { path: '/hr/payroll', label: 'Payroll', icon: <Banknote className="h-4 w-4" />, allowedRoles: moduleRoles.hr },
+      { path: '/hr/recruitment', label: 'Recruitment', icon: <UserPlus className="h-4 w-4" />, allowedRoles: moduleRoles.hr },
     ],
   },
   {
     path: '/crm',
     label: 'CRM',
-    icon: <UserCircle className="w-5 h-5" />,
+    icon: <UserCircle className="h-5 w-5" />,
+    allowedRoles: moduleRoles.crm,
     subItems: [
-      { path: '/crm/leads', label: 'Leads', icon: <TrendingUp className="w-4 h-4" /> },
-      { path: '/crm/opportunities', label: 'Opportunities', icon: <Target className="w-4 h-4" /> },
-      { path: '/crm/activities', label: 'Activities', icon: <Phone className="w-4 h-4" /> },
-      { path: '/crm/campaigns', label: 'Campaigns', icon: <Megaphone className="w-4 h-4" /> },
+      { path: '/crm/leads', label: 'Leads', icon: <TrendingUp className="h-4 w-4" />, allowedRoles: moduleRoles.crm },
+      { path: '/crm/opportunities', label: 'Opportunities', icon: <Target className="h-4 w-4" />, allowedRoles: moduleRoles.crm },
+      { path: '/crm/activities', label: 'Activities', icon: <Phone className="h-4 w-4" />, allowedRoles: moduleRoles.crm },
+      { path: '/crm/campaigns', label: 'Campaigns', icon: <Megaphone className="h-4 w-4" />, allowedRoles: moduleRoles.crm },
     ],
   },
   {
     path: '/projects',
     label: 'Project Management',
-    icon: <FolderKanban className="w-5 h-5" />,
+    icon: <FolderKanban className="h-5 w-5" />,
+    allowedRoles: moduleRoles.projects,
     subItems: [
-      { path: '/projects/all', label: 'Projects', icon: <FolderKanban className="w-4 h-4" /> },
-      { path: '/projects/tasks', label: 'Tasks', icon: <CheckSquare className="w-4 h-4" /> },
-      { path: '/projects/time-tracking', label: 'Time Tracking', icon: <Clock className="w-4 h-4" /> },
-      { path: '/projects/milestones', label: 'Milestones', icon: <Milestone className="w-4 h-4" /> },
+      { path: '/projects/all', label: 'Projects', icon: <FolderKanban className="h-4 w-4" />, allowedRoles: moduleRoles.projects },
+      { path: '/projects/tasks', label: 'Tasks', icon: <CheckSquare className="h-4 w-4" />, allowedRoles: moduleRoles.projects },
+      { path: '/projects/time-tracking', label: 'Time Tracking', icon: <Clock className="h-4 w-4" />, allowedRoles: moduleRoles.projects },
+      { path: '/projects/milestones', label: 'Milestones', icon: <Milestone className="h-4 w-4" />, allowedRoles: moduleRoles.projects },
     ],
   },
   {
     path: '/assets',
     label: 'Asset Management',
-    icon: <FileBox className="w-5 h-5" />,
+    icon: <FileBox className="h-5 w-5" />,
+    allowedRoles: moduleRoles.assets,
     subItems: [
-      { path: '/assets/all', label: 'Assets', icon: <FileBox className="w-4 h-4" /> },
-      { path: '/assets/depreciation', label: 'Depreciation', icon: <TrendingDown className="w-4 h-4" /> },
-      { path: '/assets/maintenance', label: 'Maintenance', icon: <Wrench className="w-4 h-4" /> },
-      { path: '/assets/transfers', label: 'Asset Transfers', icon: <GitBranch className="w-4 h-4" /> },
+      { path: '/assets/all', label: 'Assets', icon: <FileBox className="h-4 w-4" />, allowedRoles: moduleRoles.assets },
+      { path: '/assets/depreciation', label: 'Depreciation', icon: <TrendingDown className="h-4 w-4" />, allowedRoles: moduleRoles.assets },
+      { path: '/assets/maintenance', label: 'Maintenance', icon: <Wrench className="h-4 w-4" />, allowedRoles: moduleRoles.assets },
+      { path: '/assets/transfers', label: 'Asset Transfers', icon: <GitBranch className="h-4 w-4" />, allowedRoles: moduleRoles.assets },
     ],
   },
   {
     path: '/system',
     label: 'System',
-    icon: <Settings className="w-5 h-5" />,
+    icon: <Settings className="h-5 w-5" />,
+    allowedRoles: moduleRoles.systemOverview,
     subItems: [
-      { path: '/system/users', label: 'Users', icon: <Users className="w-4 h-4" /> },
-      { path: '/system/roles', label: 'Roles & Permissions', icon: <FileCheck className="w-4 h-4" /> },
-      { path: '/system/audit-logs', label: 'Audit Logs', icon: <FileText className="w-4 h-4" /> },
-      { path: '/system/settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+      { path: '/system/users', label: 'Users', icon: <Users className="h-4 w-4" />, allowedRoles: moduleRoles.systemUsers },
+      { path: '/system/roles', label: 'Roles & Permissions', icon: <FileCheck className="h-4 w-4" />, allowedRoles: moduleRoles.systemRoles },
+      { path: '/system/audit-logs', label: 'Audit Logs', icon: <FileText className="h-4 w-4" />, allowedRoles: moduleRoles.systemAuditLogs },
+      { path: '/system/settings', label: 'Settings', icon: <Settings className="h-4 w-4" />, allowedRoles: moduleRoles.systemSettings },
     ],
   },
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
-  const location = useLocation();
+  const { user } = useAuth();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  // Auto-expand parent when a child is active
-  useEffect(() => {
-    menuItems.forEach(item => {
-      if (item.subItems?.some(sub => location.pathname === sub.path || location.pathname.startsWith(sub.path + '/'))) {
-        setExpandedItems(prev => prev.includes(item.path) ? prev : [...prev, item.path]);
-      }
-    });
-  }, [location.pathname]);
+  const visibleMenuItems = useMemo(
+    () =>
+      menuItems
+        .filter((item) =>
+          hasAllowedRole(user?.roles, item.allowedRoles),
+        )
+        .map((item) => ({
+          ...item,
+          subItems: item.subItems?.filter((subItem) =>
+            hasAllowedRole(user?.roles, subItem.allowedRoles),
+          ),
+        }))
+        .filter(
+          (item) =>
+            !item.subItems || item.subItems.length > 0,
+        ),
+    [user?.roles],
+  );
 
   const toggleExpanded = (path: string) => {
-    setExpandedItems(prev =>
-      prev.includes(path) ? prev.filter(item => item !== path) : [...prev, path]
+    setExpandedItems((current) =>
+      current.includes(path)
+        ? current.filter((item) => item !== path)
+        : [...current, path],
     );
   };
 
-  const isParentActive = (item: MenuItem) => {
-    if (item.subItems) {
-      return item.subItems.some(sub => location.pathname === sub.path || location.pathname.startsWith(sub.path + '/'));
-    }
-    return location.pathname === item.path;
-  };
-
   return (
-    <div className="w-64 bg-gradient-to-b from-slate-50 to-white border-r border-gray-200 h-screen overflow-y-auto flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-1.5 bg-white/20 rounded-lg">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-black text-white tracking-tight">Nexa ERP</h1>
-            </div>
-            <p className="text-blue-200 text-xs mt-1 font-medium">Enterprise Resource Planning</p>
-          </div>
-          {onClose && (
-            <button onClick={onClose} className="lg:hidden p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-          )}
+    <div className="h-screen w-64 overflow-y-auto border-r border-gray-200 bg-white">
+      <div className="flex items-center justify-between border-b border-gray-200 p-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            NexaERP
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Enterprise Resource Planning
+          </p>
         </div>
+
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {menuItems.map((item) => (
-          <div key={item.path}>
+      <nav className="p-4">
+        {visibleMenuItems.map((item) => (
+          <div key={item.path} className="mb-1">
             {item.subItems ? (
               <>
                 <button
+                  type="button"
                   onClick={() => toggleExpanded(item.path)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group ${
-                    isParentActive(item)
-                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100"
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`${isParentActive(item) ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'} transition-colors`}>
-                      {item.icon}
+                    {item.icon}
+                    <span className="text-sm font-medium">
+                      {item.label}
                     </span>
-                    <span>{item.label}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {isParentActive(item) && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    )}
-                    {expandedItems.includes(item.path) ? (
-                      <ChevronDown className={`w-4 h-4 ${isParentActive(item) ? 'text-blue-500' : 'text-gray-400'}`} />
-                    ) : (
-                      <ChevronRight className={`w-4 h-4 ${isParentActive(item) ? 'text-blue-500' : 'text-gray-400'}`} />
-                    )}
-                  </div>
+
+                  {expandedItems.includes(item.path) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
                 </button>
 
-                {/* Sub-items with smooth expand */}
-                <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    expandedItems.includes(item.path) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l-2 border-gray-100 pl-2">
+                {expandedItems.includes(item.path) && (
+                  <div className="ml-4 mt-1 space-y-1">
                     {item.subItems.map((subItem) => (
                       <NavLink
                         key={subItem.path}
                         to={subItem.path}
                         onClick={onClose}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                          `flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
                             isActive
-                              ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm border-l-2 border-blue-500 -ml-[10px] pl-[18px]'
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              ? 'bg-blue-50 font-medium text-blue-600'
+                              : 'text-gray-600 hover:bg-gray-100'
                           }`
                         }
                       >
-                        <span className="w-4 h-4 flex-shrink-0">{subItem.icon}</span>
-                        <span className="truncate">{subItem.label}</span>
+                        {subItem.icon}
+                        {subItem.label}
                       </NavLink>
                     ))}
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <NavLink
                 to={item.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                  `flex items-center gap-3 rounded-md px-3 py-2 transition-colors ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 font-semibold shadow-sm'
+                      ? 'bg-blue-50 font-medium text-blue-600'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`
                 }
               >
-                <span className={location.pathname === item.path ? 'text-blue-600' : 'text-gray-400'}>{item.icon}</span>
-                <span>{item.label}</span>
-                {location.pathname === item.path && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
-                )}
+                {item.icon}
+                <span className="text-sm font-medium">
+                  {item.label}
+                </span>
               </NavLink>
             )}
           </div>
         ))}
       </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Sparkles className="w-3 h-3 text-amber-500" />
-          <span>ERP v1.0 • Powered by Spring Boot</span>
-        </div>
-      </div>
     </div>
   );
 }

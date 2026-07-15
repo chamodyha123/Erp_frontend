@@ -1,8 +1,18 @@
+import {
+  createElement,
+  type ComponentType,
+} from 'react';
+
 import { createBrowserRouter } from 'react-router';
+
+
 import { Layout } from './components/Layout';
+import { RoleProtectedRoute } from './components/RoleProtectedRoute';
+
 import { Dashboard } from './pages/Dashboard';
 import { Login } from './pages/Login';
 import { ForgotPassword } from './pages/ForgotPassword';
+import { Unauthorized } from './pages/Unauthorized';
 
 // Finance Module
 import { FinanceOverview } from './pages/finance/FinanceOverview';
@@ -80,6 +90,24 @@ import { Settings } from './pages/system/Settings';
 
 import { NotFound } from './pages/NotFound';
 
+import {
+  moduleRoles,
+  type AppRole,
+} from '@/config/roleAccess';
+
+function protectedElement(
+  PageComponent: ComponentType,
+  allowedRoles: AppRole[],
+) {
+  return createElement(
+    RoleProtectedRoute,
+    {
+      allowedRoles,
+    },
+    createElement(PageComponent),
+  );
+}
+
 export const router = createBrowserRouter([
   {
     path: '/login',
@@ -90,86 +118,425 @@ export const router = createBrowserRouter([
     Component: ForgotPassword,
   },
   {
+    path: '/unauthorized',
+    Component: Unauthorized,
+  },
+  {
     path: '/',
     Component: Layout,
     children: [
-      { index: true, Component: Dashboard },
-      
+      {
+        index: true,
+        element: protectedElement(
+          Dashboard,
+          moduleRoles.dashboard,
+        ),
+      },
+
       // Finance Routes
-      { path: 'finance', Component: FinanceOverview },
-      { path: 'finance/chart-of-accounts', Component: ChartOfAccounts },
-      { path: 'finance/journal-entries', Component: JournalEntries },
-      { path: 'finance/accounts-payable', Component: AccountsPayable },
-      { path: 'finance/accounts-receivable', Component: AccountsReceivable },
-      { path: 'finance/budgets', Component: Budgets },
-      
+      {
+        path: 'finance',
+        element: protectedElement(
+          FinanceOverview,
+          moduleRoles.finance,
+        ),
+      },
+      {
+        path: 'finance/chart-of-accounts',
+        element: protectedElement(
+          ChartOfAccounts,
+          moduleRoles.finance,
+        ),
+      },
+      {
+        path: 'finance/journal-entries',
+        element: protectedElement(
+          JournalEntries,
+          moduleRoles.finance,
+        ),
+      },
+      {
+        path: 'finance/accounts-payable',
+        element: protectedElement(
+          AccountsPayable,
+          moduleRoles.finance,
+        ),
+      },
+      {
+        path: 'finance/accounts-receivable',
+        element: protectedElement(
+          AccountsReceivable,
+          moduleRoles.finance,
+        ),
+      },
+      {
+        path: 'finance/budgets',
+        element: protectedElement(
+          Budgets,
+          moduleRoles.finance,
+        ),
+      },
+
       // Sales Routes
-      { path: 'sales', Component: SalesOverview },
-      { path: 'sales/customers', Component: Customers },
-      { path: 'sales/quotations', Component: SalesQuotations },
-      { path: 'sales/orders', Component: SalesOrders },
-      { path: 'sales/invoices', Component: SalesInvoices },
-      
+      {
+        path: 'sales',
+        element: protectedElement(
+          SalesOverview,
+          moduleRoles.sales,
+        ),
+      },
+      {
+        path: 'sales/customers',
+        element: protectedElement(
+          Customers,
+          moduleRoles.sales,
+        ),
+      },
+      {
+        path: 'sales/quotations',
+        element: protectedElement(
+          SalesQuotations,
+          moduleRoles.sales,
+        ),
+      },
+      {
+        path: 'sales/orders',
+        element: protectedElement(
+          SalesOrders,
+          moduleRoles.sales,
+        ),
+      },
+      {
+        path: 'sales/invoices',
+        element: protectedElement(
+          SalesInvoices,
+          moduleRoles.sales,
+        ),
+      },
+
       // Purchasing Routes
-      { path: 'purchasing', Component: PurchasingOverview },
-      { path: 'purchasing/vendors', Component: Vendors },
-      { path: 'purchasing/requisitions', Component: PurchaseRequisitions },
-      { path: 'purchasing/orders', Component: PurchaseOrders },
-      { path: 'purchasing/invoices', Component: PurchaseInvoices },
-      
+      {
+        path: 'purchasing',
+        element: protectedElement(
+          PurchasingOverview,
+          moduleRoles.purchasing,
+        ),
+      },
+      {
+        path: 'purchasing/vendors',
+        element: protectedElement(
+          Vendors,
+          moduleRoles.purchasing,
+        ),
+      },
+      {
+        path: 'purchasing/requisitions',
+        element: protectedElement(
+          PurchaseRequisitions,
+          moduleRoles.purchasing,
+        ),
+      },
+      {
+        path: 'purchasing/orders',
+        element: protectedElement(
+          PurchaseOrders,
+          moduleRoles.purchasing,
+        ),
+      },
+      {
+        path: 'purchasing/invoices',
+        element: protectedElement(
+          PurchaseInvoices,
+          moduleRoles.purchasing,
+        ),
+      },
+
       // Inventory Routes
-      { path: 'inventory', Component: InventoryOverview },
-      { path: 'inventory/products', Component: Products },
-      { path: 'inventory/warehouses', Component: Warehouses },
-      { path: 'inventory/stock-levels', Component: StockLevels },
-      { path: 'inventory/stock-movements', Component: StockMovements },
-      
+      {
+        path: 'inventory',
+        element: protectedElement(
+          InventoryOverview,
+          moduleRoles.inventory,
+        ),
+      },
+      {
+        path: 'inventory/products',
+        element: protectedElement(
+          Products,
+          moduleRoles.inventory,
+        ),
+      },
+      {
+        path: 'inventory/warehouses',
+        element: protectedElement(
+          Warehouses,
+          moduleRoles.inventory,
+        ),
+      },
+      {
+        path: 'inventory/stock-levels',
+        element: protectedElement(
+          StockLevels,
+          moduleRoles.inventory,
+        ),
+      },
+      {
+        path: 'inventory/stock-movements',
+        element: protectedElement(
+          StockMovements,
+          moduleRoles.inventory,
+        ),
+      },
+
       // Manufacturing Routes
-      { path: 'manufacturing', Component: ManufacturingOverview },
-      { path: 'manufacturing/bill-of-materials', Component: BillOfMaterials },
-      { path: 'manufacturing/work-orders', Component: WorkOrders },
-      { path: 'manufacturing/production-orders', Component: ProductionOrders },
-      { path: 'manufacturing/quality-control', Component: QualityControl },
-      
-      // HR Routes
-      { path: 'hr', Component: HROverview },
-      { path: 'hr/employees', Component: Employees },
-      { path: 'hr/departments', Component: Departments },
-      { path: 'hr/attendance', Component: Attendance },
-      { path: 'hr/clock-in', Component: ClockIn },
-      { path: 'hr/leave', Component: Leave },
-      { path: 'hr/payroll', Component: Payroll },
-      { path: 'hr/recruitment', Component: Recruitment },
-      
+      {
+        path: 'manufacturing',
+        element: protectedElement(
+          ManufacturingOverview,
+          moduleRoles.manufacturing,
+        ),
+      },
+      {
+        path: 'manufacturing/bill-of-materials',
+        element: protectedElement(
+          BillOfMaterials,
+          moduleRoles.manufacturing,
+        ),
+      },
+      {
+        path: 'manufacturing/work-orders',
+        element: protectedElement(
+          WorkOrders,
+          moduleRoles.manufacturing,
+        ),
+      },
+      {
+        path: 'manufacturing/production-orders',
+        element: protectedElement(
+          ProductionOrders,
+          moduleRoles.manufacturing,
+        ),
+      },
+      {
+        path: 'manufacturing/quality-control',
+        element: protectedElement(
+          QualityControl,
+          moduleRoles.manufacturing,
+        ),
+      },
+
+      // HR Management Routes
+      {
+        path: 'hr',
+        element: protectedElement(
+          HROverview,
+          moduleRoles.hr,
+        ),
+      },
+      {
+        path: 'hr/employees',
+        element: protectedElement(
+          Employees,
+          moduleRoles.hr,
+        ),
+      },
+      {
+        path: 'hr/departments',
+        element: protectedElement(
+          Departments,
+          moduleRoles.hr,
+        ),
+      },
+      {
+        path: 'hr/attendance',
+        element: protectedElement(
+          Attendance,
+          moduleRoles.hr,
+        ),
+      },
+      {
+        path: 'hr/payroll',
+        element: protectedElement(
+          Payroll,
+          moduleRoles.hr,
+        ),
+      },
+      {
+        path: 'hr/recruitment',
+        element: protectedElement(
+          Recruitment,
+          moduleRoles.hr,
+        ),
+      },
+
+      // Employee Self-Service Routes
+      {
+        path: 'hr/clock-in',
+        element: protectedElement(
+          ClockIn,
+          moduleRoles.employeeSelfService,
+        ),
+      },
+      {
+        path: 'hr/leave',
+        element: protectedElement(
+          Leave,
+          moduleRoles.employeeSelfService,
+        ),
+      },
+
       // CRM Routes
-      { path: 'crm', Component: CRMOverview },
-      { path: 'crm/leads', Component: Leads },
-      { path: 'crm/opportunities', Component: Opportunities },
-      { path: 'crm/activities', Component: Activities },
-      { path: 'crm/campaigns', Component: Campaigns },
-      
+      {
+        path: 'crm',
+        element: protectedElement(
+          CRMOverview,
+          moduleRoles.crm,
+        ),
+      },
+      {
+        path: 'crm/leads',
+        element: protectedElement(
+          Leads,
+          moduleRoles.crm,
+        ),
+      },
+      {
+        path: 'crm/opportunities',
+        element: protectedElement(
+          Opportunities,
+          moduleRoles.crm,
+        ),
+      },
+      {
+        path: 'crm/activities',
+        element: protectedElement(
+          Activities,
+          moduleRoles.crm,
+        ),
+      },
+      {
+        path: 'crm/campaigns',
+        element: protectedElement(
+          Campaigns,
+          moduleRoles.crm,
+        ),
+      },
+
       // Project Management Routes
-      { path: 'projects', Component: ProjectsOverview },
-      { path: 'projects/all', Component: Projects },
-      { path: 'projects/tasks', Component: Tasks },
-      { path: 'projects/time-tracking', Component: TimeTracking },
-      { path: 'projects/milestones', Component: Milestones },
-      
+      {
+        path: 'projects',
+        element: protectedElement(
+          ProjectsOverview,
+          moduleRoles.projects,
+        ),
+      },
+      {
+        path: 'projects/all',
+        element: protectedElement(
+          Projects,
+          moduleRoles.projects,
+        ),
+      },
+      {
+        path: 'projects/tasks',
+        element: protectedElement(
+          Tasks,
+          moduleRoles.projects,
+        ),
+      },
+      {
+        path: 'projects/time-tracking',
+        element: protectedElement(
+          TimeTracking,
+          moduleRoles.projects,
+        ),
+      },
+      {
+        path: 'projects/milestones',
+        element: protectedElement(
+          Milestones,
+          moduleRoles.projects,
+        ),
+      },
+
       // Asset Management Routes
-      { path: 'assets', Component: AssetsOverview },
-      { path: 'assets/all', Component: Assets },
-      { path: 'assets/depreciation', Component: Depreciation },
-      { path: 'assets/maintenance', Component: Maintenance },
-      { path: 'assets/transfers', Component: AssetTransfers },
-      
+      {
+        path: 'assets',
+        element: protectedElement(
+          AssetsOverview,
+          moduleRoles.assets,
+        ),
+      },
+      {
+        path: 'assets/all',
+        element: protectedElement(
+          Assets,
+          moduleRoles.assets,
+        ),
+      },
+      {
+        path: 'assets/depreciation',
+        element: protectedElement(
+          Depreciation,
+          moduleRoles.assets,
+        ),
+      },
+      {
+        path: 'assets/maintenance',
+        element: protectedElement(
+          Maintenance,
+          moduleRoles.assets,
+        ),
+      },
+      {
+        path: 'assets/transfers',
+        element: protectedElement(
+          AssetTransfers,
+          moduleRoles.assets,
+        ),
+      },
+
       // Core System Routes
-      { path: 'system', Component: SystemOverview },
-      { path: 'system/users', Component: Users },
-      { path: 'system/roles', Component: Roles },
-      { path: 'system/audit-logs', Component: AuditLogs },
-      { path: 'system/settings', Component: Settings },
-      
-      { path: '*', Component: NotFound },
+      {
+        path: 'system',
+        element: protectedElement(
+          SystemOverview,
+          moduleRoles.systemOverview,
+        ),
+      },
+      {
+        path: 'system/users',
+        element: protectedElement(
+          Users,
+          moduleRoles.systemUsers,
+        ),
+      },
+      {
+        path: 'system/roles',
+        element: protectedElement(
+          Roles,
+          moduleRoles.systemRoles,
+        ),
+      },
+      {
+        path: 'system/audit-logs',
+        element: protectedElement(
+          AuditLogs,
+          moduleRoles.systemAuditLogs,
+        ),
+      },
+      {
+        path: 'system/settings',
+        element: protectedElement(
+          Settings,
+          moduleRoles.systemSettings,
+        ),
+      },
+
+      {
+        path: '*',
+        Component: NotFound,
+      },
     ],
   },
 ]);
