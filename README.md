@@ -16,6 +16,12 @@ A concise breakdown of NexaERP's core architecture, including domain research, s
 
 [![View PDF Report](https://img.shields.io/badge/View_NexaERP_Report-PDF-red?style=for-the-badge&logo=adobe-acrobat-reader&logoColor=white)](https://github.com/dilshan24142/Erp_backend/blob/dev/src/main/resources/NexaERP_Report_Group_09.pdf)
 
+## 🌐 Live Demo
+
+Experience the application online:
+
+🔗 **Frontend:** https://nexaerp-frontend.vercel.app/
+
 
 ##  Key Features
 - JWT Authentication
