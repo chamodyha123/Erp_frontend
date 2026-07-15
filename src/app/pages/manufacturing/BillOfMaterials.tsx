@@ -4,16 +4,15 @@ import manufacturingService, { type BillOfMaterials } from '@/services/manufactu
 import { Modal, FormField, DetailRow, ModalBtn, inputCls, selectCls } from '@/app/components/ui/Modal';
 
 const statusColor: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-800',
   ACTIVE: 'bg-green-100 text-green-800',
-  OBSOLETE: 'bg-red-100 text-red-800',
+  INACTIVE: 'bg-red-100 text-red-800',
 };
 
 const blank = () => ({
   bomNumber: '',
   productId: 0,
   version: '1.0',
-  status: 'DRAFT',
+  isActive: true,
   description: '',
 });
 
@@ -59,7 +58,7 @@ export function BillOfMaterials() {
       bomNumber: bom.bomNumber ?? '',
       productId: bom.product?.id ?? 0,
       version: bom.version ?? '1.0',
-      status: bom.status ?? 'DRAFT',
+      isActive: bom.isActive ?? true,
       description: bom.description ?? '',
     });
     setModal('form');
@@ -69,7 +68,7 @@ export function BillOfMaterials() {
     const payload: any = {
       bomNumber: form.bomNumber,
       version: form.version,
-      status: form.status,
+      isActive: form.isActive,
       description: form.description,
       product: form.productId ? { id: form.productId } : null,
     };
@@ -128,8 +127,8 @@ export function BillOfMaterials() {
                   <td className="px-4 py-4 text-sm text-gray-900">{r.product?.name ?? '-'}</td>
                   <td className="px-4 py-4 text-sm text-gray-600">{r.version ?? '-'}</td>
                   <td className="px-4 py-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status ?? ''] ?? 'bg-gray-100 text-gray-800'}`}>
-                      {r.status}
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColor[r.isActive === false ? 'INACTIVE' : 'ACTIVE']}`}>
+                      {r.isActive === false ? 'Inactive' : 'Active'}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm">
@@ -153,7 +152,7 @@ export function BillOfMaterials() {
             <DetailRow label="BOM Number" value={selected.bomNumber ?? '-'} />
             <DetailRow label="Product" value={selected.product?.name ?? '-'} />
             <DetailRow label="Version" value={selected.version ?? '-'} />
-            <DetailRow label="Status" value={selected.status ?? '-'} />
+            <DetailRow label="Status" value={selected.isActive === false ? 'Inactive' : 'Active'} />
             {selected.description && <DetailRow label="Description" value={selected.description} />}
           </div>
         )}
@@ -180,10 +179,13 @@ export function BillOfMaterials() {
             <input value={form.version} onChange={e => setForm(f => ({ ...f, version: e.target.value }))} className={inputCls} />
           </FormField>
           <FormField label="Status">
-            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={selectCls}>
-              <option value="DRAFT">Draft</option>
+            <select
+              value={form.isActive ? 'ACTIVE' : 'INACTIVE'}
+              onChange={e => setForm(f => ({ ...f, isActive: e.target.value === 'ACTIVE' }))}
+              className={selectCls}
+            >
               <option value="ACTIVE">Active</option>
-              <option value="OBSOLETE">Obsolete</option>
+              <option value="INACTIVE">Inactive</option>
             </select>
           </FormField>
           <FormField label="Description">
